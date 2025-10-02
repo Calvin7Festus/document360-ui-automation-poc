@@ -1,0 +1,57 @@
+openapi: 3.0.0
+
+info:
+  title: Minimal API
+  version: 1.0.0
+  # No description field - this will test the negative validation
+  contact:
+    name: Minimal API Support
+    email: minimal@example.com
+    url: https://minimal-api.example.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://minimal-api.example.com/terms
+
+servers:
+  - url: https://minimal-api.example.com/v1
+    description: Production server
+
+tags:
+  - name: basic
+    description: Basic operations
+
+paths:
+  /status:
+    get:
+      tags:
+        - basic
+      summary: Get API status
+      description: Returns the current status of the API
+      operationId: getStatus
+      responses:
+        "200":
+          description: API status response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: "ok"
+                  timestamp:
+                    type: string
+                    format: date-time
+
+components:
+  schemas:
+    Status:
+      type: object
+      properties:
+        status:
+          type: string
+          example: "ok"
+        timestamp:
+          type: string
+          format: date-time

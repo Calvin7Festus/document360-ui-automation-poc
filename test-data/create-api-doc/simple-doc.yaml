@@ -1,0 +1,71 @@
+openapi: 3.0.0
+
+info:
+  title: Hello World API
+  version: 1.0.0
+  description: A simple API definition for testing in Document360
+  contact:
+    name: API Support
+    email: support@example.com
+    url: https://example.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://example.com/terms
+
+servers:
+  - url: https://example.com/api
+    description: Production server
+  - url: https://staging.example.com/api
+    description: Staging server
+  - url: https://dev.example.com/api
+    description: Development server
+
+tags:
+  - name: greeting
+    description: Greeting operations
+  - name: user
+    description: User management operations
+
+paths:
+  /hello:
+    get:
+      tags:
+        - greeting
+      summary: Returns a greeting message
+      description: Returns a personalized greeting message
+      operationId: getHello
+      parameters:
+        - name: name
+          in: query
+          description: Name to include in the greeting
+          required: false
+          schema:
+            type: string
+            default: "World"
+        - name: language
+          in: query
+          description: Language for the greeting
+          required: false
+          schema:
+            type: string
+            enum: [en, es, fr, de]
+            default: en
+      responses:
+        "200":
+          description: A greeting response
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  message:
+                    type: string
+                    example: "Hello, World!"
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: "2024-01-15T10:30:00Z"
+                  language:
+                    type: string
+                    example: "en"

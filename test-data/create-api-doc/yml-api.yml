@@ -1,0 +1,99 @@
+openapi: 3.0.0
+
+info:
+  title: YML API Specification
+  version: 3.0.0
+  description: A comprehensive API definition in YML format for testing Document360 import functionality
+  contact:
+    name: YML API Support
+    email: yml-support@example.com
+    url: https://yml-api.example.com/support
+  license:
+    name: BSD-3-Clause
+    url: https://opensource.org/licenses/BSD-3-Clause
+  termsOfService: https://yml-api.example.com/terms
+
+servers:
+  - url: https://yml-api.example.com/v3
+    description: Production server for YML API
+  - url: https://staging-yml-api.example.com/v3
+    description: Staging server for YML API
+
+tags:
+  - name: yml-operations
+    description: Core YML API operations
+  - name: configuration
+    description: Configuration management endpoints
+
+paths:
+  /yml/config:
+    get:
+      tags:
+        - yml-operations
+      summary: Get YML configuration
+      description: Retrieve configuration data in YML format
+      operationId: getYmlConfig
+      responses:
+        "200":
+          description: YML configuration retrieved successfully
+          content:
+            application/x-yaml:
+              schema:
+                $ref: "#/components/schemas/YmlConfig"
+    put:
+      tags:
+        - yml-operations
+      summary: Update YML configuration
+      description: Update configuration data in YML format
+      operationId: updateYmlConfig
+      requestBody:
+        required: true
+        content:
+          application/x-yaml:
+            schema:
+              $ref: "#/components/schemas/YmlConfig"
+      responses:
+        "200":
+          description: YML configuration updated successfully
+          content:
+            application/x-yaml:
+              schema:
+                $ref: "#/components/schemas/YmlConfig"
+
+components:
+  schemas:
+    YmlConfig:
+      type: object
+      properties:
+        environment:
+          type: string
+          enum: [development, staging, production]
+          example: "production"
+        settings:
+          type: object
+          properties:
+            debug:
+              type: boolean
+              default: false
+            timeout:
+              type: integer
+              minimum: 1
+              maximum: 300
+              default: 30
+            features:
+              type: array
+              items:
+                type: string
+              example: ["feature1", "feature2"]
+        metadata:
+          type: object
+          properties:
+            version:
+              type: string
+              example: "3.0.0"
+            lastModified:
+              type: string
+              format: date-time
+      required:
+        - environment
+        - settings

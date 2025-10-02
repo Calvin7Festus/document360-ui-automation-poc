@@ -1,0 +1,78 @@
+openapi: 3.0.0
+
+info:
+  title: YAML API Specification
+  version: 1.0.0
+  description: A comprehensive API definition in YAML format for testing Document360 import functionality
+  contact:
+    name: YAML API Support
+    email: yaml-support@example.com
+    url: https://yaml-api.example.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://yaml-api.example.com/terms
+
+servers:
+  - url: https://yaml-api.example.com/v1
+    description: Production server for YAML API
+  - url: https://staging-yaml-api.example.com/v1
+    description: Staging server for YAML API
+
+tags:
+  - name: yaml-operations
+    description: Core YAML API operations
+  - name: data-processing
+    description: Data processing endpoints
+
+paths:
+  /yaml/data:
+    get:
+      tags:
+        - yaml-operations
+      summary: Retrieve YAML data
+      description: Get structured data in YAML format
+      operationId: getYamlData
+      parameters:
+        - name: format
+          in: query
+          description: Output format preference
+          required: false
+          schema:
+            type: string
+            enum: [yaml, json]
+            default: yaml
+      responses:
+        "200":
+          description: YAML data retrieved successfully
+          content:
+            application/yaml:
+              schema:
+                $ref: "#/components/schemas/YamlData"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/YamlData"
+
+components:
+  schemas:
+    YamlData:
+      type: object
+      properties:
+        id:
+          type: string
+          example: "yaml-123"
+        content:
+          type: string
+          example: "YAML formatted data"
+        metadata:
+          type: object
+          properties:
+            created:
+              type: string
+              format: date-time
+            version:
+              type: string
+              example: "1.0.0"
+      required:
+        - id
+        - content

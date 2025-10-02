@@ -1,0 +1,107 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "JSON API Specification",
+    "version": "2.0.0",
+    "description": "A comprehensive API definition in JSON format for testing Document360 import functionality",
+    "contact": {
+      "name": "JSON API Support",
+      "email": "json-support@example.com",
+      "url": "https://json-api.example.com/support"
+    },
+    "license": {
+      "name": "Apache 2.0",
+      "url": "https://www.apache.org/licenses/LICENSE-2.0"
+    },
+    "termsOfService": "https://json-api.example.com/terms"
+  },
+  "servers": [
+    {
+      "url": "https://json-api.example.com/v2",
+      "description": "Production server for JSON API"
+    },
+    {
+      "url": "https://staging-json-api.example.com/v2",
+      "description": "Staging server for JSON API"
+    }
+  ],
+  "tags": [
+    {
+      "name": "json-operations",
+      "description": "Core JSON API operations"
+    },
+    {
+      "name": "data-transformation",
+      "description": "Data transformation endpoints"
+    }
+  ],
+  "paths": {
+    "/json/transform": {
+      "post": {
+        "tags": ["json-operations"],
+        "summary": "Transform JSON data",
+        "description": "Convert and transform JSON data structures",
+        "operationId": "transformJsonData",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/JsonInput"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "JSON data transformed successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/JsonOutput"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "JsonInput": {
+        "type": "object",
+        "properties": {
+          "data": {
+            "type": "object",
+            "description": "Input JSON data to transform"
+          },
+          "transformType": {
+            "type": "string",
+            "enum": ["format", "validate", "convert"],
+            "example": "format"
+          }
+        },
+        "required": ["data", "transformType"]
+      },
+      "JsonOutput": {
+        "type": "object",
+        "properties": {
+          "transformedData": {
+            "type": "object",
+            "description": "Transformed JSON data"
+          },
+          "status": {
+            "type": "string",
+            "example": "success"
+          },
+          "timestamp": {
+            "type": "string",
+            "format": "date-time"
+          }
+        },
+        "required": ["transformedData", "status"]
+      }
+    }
+  }
+}

@@ -1,0 +1,38 @@
+openapi: 3.0.0
+
+info:
+  title: Invalid YAML API
+  version: 1.0.0
+  description: This YAML file has invalid structure
+  contact:
+    name: Invalid API Support
+    email: invalid@example.com
+    url: https://invalid-api.example.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+
+servers:
+  - url: https://invalid-api.example.com/v1
+    description: Production server
+
+paths:
+  /invalid:
+    get:
+      summary: Invalid endpoint
+      description: This endpoint has missing required fields
+      # Missing responses section - this should cause validation error
+      parameters:
+        - name: invalidParam
+          in: query
+          # Missing required schema field
+          description: Invalid parameter
+
+components:
+  schemas:
+    InvalidSchema:
+      type: object
+      properties:
+        # Missing required properties
+        optionalField:
+          type: string

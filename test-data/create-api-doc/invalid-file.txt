@@ -1,0 +1,14 @@
+This is not a valid API specification file.
+It's just a plain text file that should cause an error
+when trying to import it as an API definition.
+
+The system should reject this file and show an appropriate error message.
+
+Some random content:
+- Lorem ipsum dolor sit amet
+- Consectetur adipiscing elit
+- Sed do eiusmod tempor incididunt
+- Ut labore et dolore magna aliqua
+
+This file has a .txt extension and contains plain text,
+not a valid JSON, YAML, or YML API specification.

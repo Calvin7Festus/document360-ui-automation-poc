@@ -1,0 +1,784 @@
+openapi: 3.0.0
+
+info:
+  title: Comprehensive Test API
+  version: 1.0.0
+  description: A comprehensive API definition for testing all Document360 UI elements
+  contact:
+    name: API Support Team
+    email: support@example.com
+    url: https://example.com/support
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://example.com/terms
+
+externalDocs:
+  description: Find more info here
+  url: https://example.com/docs
+
+servers:
+  - url: https://api.example.com/v1
+    description: Production server
+  - url: https://staging-api.example.com/v1
+    description: Staging server
+  - url: https://dev-api.example.com/v1
+    description: Development server
+  - url: https://api.example.com/{version}
+    description: Production server with variables
+    variables:
+      version:
+        default: v1
+        description: API version
+        enum: [v1, v2, v3]
+
+tags:
+  - name: pets
+    description: Pet management operations
+    externalDocs:
+      description: Find more info about pets
+      url: https://example.com/pets-docs
+  - name: users
+    description: User management operations
+    externalDocs:
+      description: Find more info about users
+      url: https://example.com/users-docs
+  - name: orders
+    description: Order management operations
+    externalDocs:
+      description: Find more info about orders
+      url: https://example.com/orders-docs
+
+paths:
+  /pets:
+    get:
+      tags:
+        - pets
+      summary: List all pets
+      description: Get a list of all pets in the system
+      operationId: listPets
+      parameters:
+        - name: limit
+          in: query
+          description: How many items to return at one time (max 100)
+          required: false
+          schema:
+            type: integer
+            maximum: 100
+            format: int32
+            example: 10
+        - name: offset
+          in: query
+          description: Number of items to skip
+          required: false
+          schema:
+            type: integer
+            format: int32
+            example: 0
+      responses:
+        '200':
+          description: A paged array of pets
+          headers:
+            X-Rate-Limit-Limit:
+              description: The number of allowed requests in the current period
+              schema:
+                type: integer
+            X-Rate-Limit-Remaining:
+              description: The number of remaining requests in the current period
+              schema:
+                type: integer
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Pet'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '500':
+          description: Internal server error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - petstore_auth:
+            - read:pets
+        - api_key: []
+
+    post:
+      tags:
+        - pets
+      summary: Create a pet
+      description: Create a new pet in the system
+      operationId: createPet
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetInput'
+            examples:
+              cat:
+                summary: A cat
+                value:
+                  name: "Whiskers"
+                  tag: "cat"
+                  petType: "cat"
+                  status: "available"
+              dog:
+                summary: A dog
+                value:
+                  name: "Buddy"
+                  tag: "dog"
+                  petType: "dog"
+                  status: "available"
+      responses:
+        '201':
+          description: Pet created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+      security:
+        - petstore_auth:
+            - write:pets
+
+  /pets/{petId}:
+    get:
+      tags:
+        - pets
+      summary: Info for a specific pet
+      description: Get detailed information about a specific pet
+      operationId: showPetById
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to retrieve
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: Expected response to a valid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - petstore_auth:
+            - read:pets
+        - api_key: []
+
+    put:
+      tags:
+        - pets
+      summary: Update a pet
+      description: Update an existing pet
+      operationId: updatePet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to update
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PetInput'
+      responses:
+        '200':
+          description: Pet updated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Pet'
+        '404':
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+      security:
+        - petstore_auth:
+            - write:pets
+
+    delete:
+      tags:
+        - pets
+      summary: Delete a pet
+      description: Delete a pet from the system
+      operationId: deletePet
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: The id of the pet to delete
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '204':
+          description: Pet deleted successfully
+        '404':
+          description: Pet not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - petstore_auth:
+            - write:pets
+
+  /pets/{petId}/uploadImage:
+    post:
+      tags:
+        - pets
+      summary: Upload an image
+      description: Upload an image for a specific pet
+      operationId: uploadPetImage
+      parameters:
+        - name: petId
+          in: path
+          required: true
+          description: ID of pet to update
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              properties:
+                additionalMetadata:
+                  type: string
+                  description: Additional data to pass to server
+                  example: "Additional metadata"
+                file:
+                  type: string
+                  format: binary
+                  description: file to upload
+            encoding:
+              file:
+                contentType: image/jpeg, image/png, image/gif
+      responses:
+        '200':
+          description: successful operation
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ApiResponse'
+              examples:
+                success:
+                  summary: Successful upload
+                  value:
+                    code: 200
+                    type: "success"
+                    message: "Image uploaded successfully"
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - petstore_auth:
+            - write:pets
+
+  /users:
+    get:
+      tags:
+        - users
+      summary: Get all users
+      description: Retrieve a list of all users
+      operationId: getUsers
+      parameters:
+        - name: limit
+          in: query
+          description: Number of users to return
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+        - name: offset
+          in: query
+          description: Number of users to skip
+          required: false
+          schema:
+            type: integer
+            minimum: 0
+            default: 0
+      responses:
+        '200':
+          description: List of users
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - petstore_auth:
+            - read:users
+
+    post:
+      tags:
+        - users
+      summary: Create a new user
+      description: Create a new user in the system
+      operationId: createUser
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UserInput'
+      responses:
+        '201':
+          description: User created successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '400':
+          description: Bad request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '422':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ValidationError'
+      security:
+        - petstore_auth:
+            - write:users
+
+  /users/{userId}:
+    get:
+      tags:
+        - users
+      summary: Get user by ID
+      description: Retrieve a specific user by their ID
+      operationId: getUserById
+      parameters:
+        - name: userId
+          in: path
+          required: true
+          description: The ID of the user to retrieve
+          schema:
+            type: integer
+            format: int64
+            example: 1
+      responses:
+        '200':
+          description: User details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/User'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+      security:
+        - petstore_auth:
+            - read:users
+
+components:
+  securitySchemes:
+    petstore_auth:
+      type: oauth2
+      flows:
+        implicit:
+          authorizationUrl: https://petstore.swagger.io/oauth/authorize
+          scopes:
+            read:pets: read your pets
+            write:pets: modify pets in your account
+            read:users: read user information
+            write:users: modify user information
+    api_key:
+      type: apiKey
+      in: header
+      name: X-API-Key
+      description: API key for authentication
+    basic_auth:
+      type: http
+      scheme: basic
+      description: Basic authentication
+
+  schemas:
+    Pet:
+      type: object
+      required:
+        - id
+        - name
+        - petType
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+          description: Unique identifier for the pet
+        name:
+          type: string
+          example: "Fluffy"
+          description: Name of the pet
+        tag:
+          type: string
+          example: "cat"
+          description: Tag or category of the pet
+        status:
+          type: string
+          enum: [available, pending, sold]
+          example: "available"
+          description: Pet status in the store
+        photoUrls:
+          type: array
+          items:
+            type: string
+          example: ["https://example.com/pet1.jpg"]
+          description: URLs of pet photos
+        category:
+          $ref: '#/components/schemas/Category'
+        petType:
+          type: string
+          enum: [dog, cat]
+          description: Type of pet for discriminator
+      discriminator:
+        propertyName: petType
+        mapping:
+          dog: '#/components/schemas/Dog'
+          cat: '#/components/schemas/Cat'
+
+    PetInput:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          example: "Fluffy"
+          description: Name of the pet
+        tag:
+          type: string
+          example: "cat"
+          description: Tag or category of the pet
+        status:
+          type: string
+          enum: [available, pending, sold]
+          example: "available"
+          description: Pet status in the store
+        photoUrls:
+          type: array
+          items:
+            type: string
+          example: ["https://example.com/pet1.jpg"]
+          description: URLs of pet photos
+        category:
+          $ref: '#/components/schemas/Category'
+        petType:
+          type: string
+          enum: [dog, cat]
+          description: Type of pet for discriminator
+
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+        name:
+          type: string
+          example: "Dogs"
+        description:
+          type: string
+          example: "All dog breeds"
+
+    Dog:
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            breed:
+              type: string
+              example: "Golden Retriever"
+            size:
+              type: string
+              enum: [small, medium, large]
+              example: "large"
+
+    Cat:
+      allOf:
+        - $ref: '#/components/schemas/Pet'
+        - type: object
+          properties:
+            breed:
+              type: string
+              example: "Persian"
+            indoor:
+              type: boolean
+              example: true
+
+    User:
+      type: object
+      required:
+        - id
+        - username
+        - email
+      properties:
+        id:
+          type: integer
+          format: int64
+          example: 1
+          description: Unique identifier for the user
+        username:
+          type: string
+          example: "johndoe"
+          description: Username of the user
+        firstName:
+          type: string
+          example: "John"
+          description: First name of the user
+        lastName:
+          type: string
+          example: "Doe"
+          description: Last name of the user
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+          description: Email address of the user
+        phone:
+          type: string
+          example: "+1-555-123-4567"
+          description: Phone number of the user
+        userStatus:
+          type: integer
+          format: int32
+          example: 1
+          description: User status
+        address:
+          $ref: '#/components/schemas/Address'
+
+    UserInput:
+      type: object
+      required:
+        - username
+        - email
+      properties:
+        username:
+          type: string
+          example: "johndoe"
+          description: Username of the user
+        firstName:
+          type: string
+          example: "John"
+          description: First name of the user
+        lastName:
+          type: string
+          example: "Doe"
+          description: Last name of the user
+        email:
+          type: string
+          format: email
+          example: "john.doe@example.com"
+          description: Email address of the user
+        phone:
+          type: string
+          example: "+1-555-123-4567"
+          description: Phone number of the user
+        address:
+          $ref: '#/components/schemas/Address'
+
+    Address:
+      type: object
+      properties:
+        street:
+          type: string
+          example: "123 Main St"
+          description: Street address
+        city:
+          type: string
+          example: "New York"
+          description: City name
+        state:
+          type: string
+          example: "NY"
+          description: State or province
+        zipCode:
+          type: string
+          example: "10001"
+          description: ZIP or postal code
+        country:
+          type: string
+          example: "USA"
+          description: Country name
+
+    ApiResponse:
+      type: object
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 200
+          description: Response code
+        type:
+          type: string
+          example: "success"
+          description: Response type
+        message:
+          type: string
+          example: "Operation completed successfully"
+          description: Response message
+
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 400
+          description: Error code
+        message:
+          type: string
+          example: "Bad request"
+          description: Error message
+        details:
+          type: string
+          example: "The request was malformed"
+          description: Additional error details
+
+    ValidationError:
+      type: object
+      required:
+        - code
+        - message
+        - errors
+      properties:
+        code:
+          type: integer
+          format: int32
+          example: 422
+          description: Error code
+        message:
+          type: string
+          example: "Validation failed"
+          description: Error message
+        errors:
+          type: array
+          items:
+            type: object
+            properties:
+              field:
+                type: string
+                example: "email"
+              message:
+                type: string
+                example: "Invalid email format"
+          description: List of validation errors
+
+  callbacks:
+    petCallback:
+      '{$request.body#/callbackUrl}':
+        post:
+          requestBody:
+            required: true
+            content:
+              application/json:
+                schema:
+                  $ref: '#/components/schemas/Pet'
+          responses:
+            '200':
+              description: Callback processed successfully
+              content:
+                application/json:
+                  schema:
+                    $ref: '#/components/schemas/ApiResponse'
+
+  examples:
+    PetExample:
+      summary: A pet example
+      value:
+        id: 1
+        name: "Fluffy"
+        tag: "cat"
+        petType: "cat"
+        status: "available"
+        photoUrls: ["https://example.com/pet1.jpg"]
+        category:
+          id: 1
+          name: "Cats"
+          description: "All cat breeds"
+
+    UserExample:
+      summary: A user example
+      value:
+        id: 1
+        username: "johndoe"
+        firstName: "John"
+        lastName: "Doe"
+        email: "john.doe@example.com"
+        phone: "+1-555-123-4567"
+        userStatus: 1
+        address:
+          street: "123 Main St"
+          city: "New York"
+          state: "NY"
+          zipCode: "10001"
+          country: "USA"

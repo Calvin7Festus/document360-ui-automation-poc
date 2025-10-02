@@ -1,0 +1,44 @@
+{
+  "name": "document360-ui-automation-poc",
+  "version": "1.0.0",
+  "description": "Proof of Concept UI automation framework using Playwright + TypeScript for validating API documentation module in Document360.",
+  "main": "index.js",
+  "scripts": {
+    "test": "playwright test",
+    "test:e2e": "playwright test src/tests/e2e/",
+    "test:debug": "playwright test --debug",
+    "test:headed": "playwright test --headed",
+    "test:report": "playwright show-report",
+    "test:ui": "playwright test --ui",
+    "test:import": "playwright test src/tests/e2e/api-import/",
+    "test:content": "playwright test src/tests/e2e/api-content/",
+    "test:portal": "playwright test src/tests/e2e/customer-portal/",
+    "test:category1": "playwright test src/tests/e2e/api-import/category-1-import-tests.spec.ts",
+    "test:category2": "playwright test src/tests/e2e/api-content/category-2-ui-validation-tests.spec.ts",
+    "test:category3": "playwright test src/tests/e2e/customer-portal/category-3-customer-portal-tests.spec.ts",
+    "test:comprehensive": "npm run test:category1 && npm run test:category2 && npm run test:category3"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/CalvinFestus/document360-ui-automation-poc.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/CalvinFestus/document360-ui-automation-poc/issues"
+  },
+  "homepage": "https://github.com/CalvinFestus/document360-ui-automation-poc#readme",
+  "devDependencies": {
+    "@playwright/test": "^1.55.0",
+    "@types/node": "^24.5.2"
+  },
+  "dependencies": {
+    "@types/js-yaml": "^4.0.9",
+    "dotenv": "^17.2.2",
+    "js-yaml": "^4.1.0",
+    "playwright": "^1.55.0",
+    "yaml": "^2.8.1"
+  }
+}
