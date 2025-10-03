@@ -4,6 +4,8 @@ import { TestSetupManager, TestSetupContext } from '../../../utils/test-setup-ma
 import { ConfigManager } from '../../../utils/config-manager';
 
 test.describe('Category 3: Customer Portal Validation Tests', () => {
+  // Configure longer timeouts for customer portal tests (headless mode can be slower)
+  test.setTimeout(60000); // 60 seconds per test
   let customerPortalPage: CustomerPortalPage;
   let setupManager: TestSetupManager;
   let testContext: TestSetupContext;
@@ -67,18 +69,9 @@ test.describe('Category 3: Customer Portal Validation Tests', () => {
 
   test.afterEach(async ({ page }) => {
     try {
-      console.log('🧹 Starting Category 3 cleanup...');
-      
       // Use the setup manager's teardown (uses stored ApiHelper instance with captured auth token)
       if (setupManager) {
         await setupManager.teardownTest();
-        console.log('✅ Category 3 cleanup completed successfully');
-      } else {
-        // Fallback: Direct cleanup if setup manager is not available
-        const { ApiHelper } = await import('../../../utils/api-helper');
-        const apiHelper = new ApiHelper(page);
-        await apiHelper.deleteTrackedApiDefinitions();
-        console.log('✅ Category 3 fallback cleanup completed');
       }
     } catch (error) {
       console.warn('⚠️ Failed to cleanup API definitions in Category 3:', error);

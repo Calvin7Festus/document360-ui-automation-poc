@@ -80,12 +80,12 @@ export class ApiDocPage extends UIActions {
     async takeValidationScreenshot(name: string) {
         await this.page.screenshot({ 
             path: `test-results/validation-screenshots/${name}-${Date.now()}.png`,
-            fullPage: true 
+            fullPage: true,
+            timeout: 30000 // 30 seconds timeout for screenshot (fonts can be slow in headless mode)
         });
     }
 
     async publishApiDocumentation(): Promise<void> {
-        console.log('📤 Publishing API documentation...');
         await this.publishButton.waitFor({ state: 'visible' });
         await this.publishButton.click();
         

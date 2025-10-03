@@ -14,6 +14,10 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   let toastMessage: ToastMessage;
 
   test.beforeEach(async ({ page }) => {
+    // Reset cleanup state for each test
+    const { ApiHelper } = await import('../../../utils/api-helper');
+    ApiHelper.resetCleanupState();
+    
     apiDocPage = new ApiDocPage(page);
     header = new Header(page);
     newApiModal = new NewApiCreationModal(page);
@@ -34,16 +38,9 @@ test.describe('Category 1: API Import Functionality Tests', () => {
     await newApiModal.uploadFromMyDeviceButton.setInputFiles(yamlFilePath);
 
     await newApiModal.clickOnNewApiReferenceButton();
-    console.log('⏳ Waiting for API creation response...');
     const apiResponsePromise = apiHelper.waitForApiCreationResponse();
     
     const apiResponse = await apiResponsePromise;
-    if (apiResponse) {
-      console.log(`✅ Captured API creation: ${apiResponse.apiDefinitionId}`);
-      console.log(`📝 Tracked IDs: ${apiResponse.apiDefinitionId} with version: ${apiResponse.projectDocumentVersionId}`);
-    } else {
-      console.log('⚠️ Failed to capture API creation response');
-    }
 
     await newApiModal.clickOnCancelButton();
     
@@ -63,16 +60,9 @@ test.describe('Category 1: API Import Functionality Tests', () => {
     await newApiModal.uploadFromMyDeviceButton.setInputFiles(jsonFilePath);
 
     await newApiModal.clickOnNewApiReferenceButton();
-    console.log('⏳ Waiting for API creation response...');
     const apiResponsePromise = apiHelper.waitForApiCreationResponse();
     
     const apiResponse = await apiResponsePromise;
-    if (apiResponse) {
-      console.log(`✅ Captured API creation: ${apiResponse.apiDefinitionId}`);
-      console.log(`📝 Tracked IDs: ${apiResponse.apiDefinitionId} with version: ${apiResponse.projectDocumentVersionId}`);
-    } else {
-      console.log('⚠️ Failed to capture API creation response');
-    }
 
     await newApiModal.clickOnCancelButton();
     
@@ -92,16 +82,9 @@ test.describe('Category 1: API Import Functionality Tests', () => {
     await newApiModal.uploadFromMyDeviceButton.setInputFiles(ymlFilePath);
 
     await newApiModal.clickOnNewApiReferenceButton();
-    console.log('⏳ Waiting for API creation response...');
     const apiResponsePromise = apiHelper.waitForApiCreationResponse();
     
     const apiResponse = await apiResponsePromise;
-    if (apiResponse) {
-      console.log(`✅ Captured API creation: ${apiResponse.apiDefinitionId}`);
-      console.log(`📝 Tracked IDs: ${apiResponse.apiDefinitionId} with version: ${apiResponse.projectDocumentVersionId}`);
-    } else {
-      console.log('⚠️ Failed to capture API creation response');
-    }
 
     await newApiModal.clickOnCancelButton();
     
@@ -123,16 +106,9 @@ test.describe('Category 1: API Import Functionality Tests', () => {
     await newApiModal.fillUrlInputBox(apiUrl);
     
     await newApiModal.clickOnNewApiReferenceButton();
-    console.log('⏳ Waiting for API creation response...');
     const apiResponsePromise = apiHelper.waitForApiCreationResponse();
     
     const apiResponse = await apiResponsePromise;
-    if (apiResponse) {
-      console.log(`✅ Captured API creation: ${apiResponse.apiDefinitionId}`);
-      console.log(`📝 Tracked IDs: ${apiResponse.apiDefinitionId} with version: ${apiResponse.projectDocumentVersionId}`);
-    } else {
-      console.log('⚠️ Failed to capture API creation response');
-    }
 
     await newApiModal.clickOnCancelButton();
     
@@ -219,10 +195,8 @@ test.describe('Category 1: API Import Functionality Tests', () => {
 
   test.afterEach(async ({ page }) => {
     try {
-      console.log('🧹 Starting cleanup...');
       const apiHelper = new ApiHelper(page);
-      const result = await apiHelper.deleteTrackedApiDefinitions();
-      console.log(`🧹 Cleanup result: ${result}`);
+      await apiHelper.deleteTrackedApiDefinitions();
     } catch (error) {
       console.warn('⚠️ Failed to cleanup API definitions:', error);
     }

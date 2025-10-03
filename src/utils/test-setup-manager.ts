@@ -42,6 +42,10 @@ export class TestSetupManager {
    * Complete test setup including validation, initialization, and API creation
    */
   async setupTest(shouldPublish: boolean = false): Promise<TestSetupContext> {
+    // Reset cleanup state for new test
+    const { ApiHelper } = await import('./api-helper');
+    ApiHelper.resetCleanupState();
+    
     // 1. Validate test configuration
     await this.validateConfiguration();
     

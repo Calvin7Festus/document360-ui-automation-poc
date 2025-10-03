@@ -47,7 +47,11 @@ export class UIActions {
   }
 
   async takeScreenshot(name: string) {
-    await this.page.screenshot({ path: `screenshots/${name}.png`, fullPage: true });
+    await this.page.screenshot({ 
+      path: `screenshots/${name}.png`, 
+      fullPage: true,
+      timeout: 30000 // 30 seconds timeout for screenshot (fonts can be slow in headless mode)
+    });
   }
 
   async assertVisible(locator: string | Locator) {

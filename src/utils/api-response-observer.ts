@@ -150,10 +150,8 @@ export class ApiResponseObserver {
       const authHeader = request.headers()['authorization'];
       if (authHeader && authHeader.startsWith('Bearer ')) {
         const token = authHeader.replace('Bearer ', '');
-        console.log(`🔍 Captured auth token from request to ${request.url()}: ${token.substring(0, 10)}...`);
         
         // Store the token globally for cleanup use
-        // We need to import ApiHelper here to set the global token
         this.storeAuthTokenGlobally(token);
       }
     } catch (error) {
@@ -162,12 +160,10 @@ export class ApiResponseObserver {
   }
 
   /**
-   * Store auth token globally (we'll need to import ApiHelper for this)
+   * Store auth token globally for cleanup use
    */
   private storeAuthTokenGlobally(token: string): void {
-    // We'll set this on the global object for now, then ApiHelper can pick it up
     (globalThis as any).__capturedAuthToken = token;
-    console.log(`✅ Stored auth token globally: ${token.substring(0, 10)}...`);
   }
 
   /**
@@ -245,13 +241,24 @@ export class ApiCreationObserver implements IApiResponseObserver {
       // Get auth token from globally captured token (from request interception)
       const authToken = (globalThis as any).__capturedAuthToken || '';
 
-      this.trackedApiDefinitions.push({
-        apiDefinitionId,
-        projectDocumentVersionId,
-        authToken
-      });
-
-      console.log(`📝 Tracked API creation: ${apiDefinitionId} with token: ${authToken ? 'Available' : 'Missing'}`);
+      // Check if this API is already tracked to avoid duplicates
+      const existingIndex = this.trackedApiDefinitions.findIndex(
+        existing => existing.apiDefinitionId === apiDefinitionId
+      );
+      
+      if (existingIndex >= 0) {
+        this.trackedApiDefinitions[existingIndex] = {
+          apiDefinitionId,
+          projectDocumentVersionId,
+          authToken
+        };
+      } else {
+        this.trackedApiDefinitions.push({
+          apiDefinitionId,
+          projectDocumentVersionId,
+          authToken
+        });
+      }
     }
   }
 
@@ -285,7 +292,16 @@ export class ApiCreationObserver implements IApiResponseObserver {
     projectDocumentVersionId: string;
     authToken: string;
   }): void {
-    this.trackedApiDefinitions.push(definition);
+    // Check if this API is already tracked to avoid duplicates
+    const existingIndex = this.trackedApiDefinitions.findIndex(
+      existing => existing.apiDefinitionId === definition.apiDefinitionId
+    );
+    
+    if (existingIndex >= 0) {
+      this.trackedApiDefinitions[existingIndex] = definition; // Update existing
+    } else {
+      this.trackedApiDefinitions.push(definition);
+    }
   }
 }
 

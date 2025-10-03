@@ -106,7 +106,8 @@ export class ToastMessage extends UIActions {
   // Take screenshot of toast
   async takeToastScreenshot(name: string) {
     await this.toastMessage.screenshot({ 
-      path: `test-results/toast-screenshots/${name}-${Date.now()}.png` 
+      path: `test-results/toast-screenshots/${name}-${Date.now()}.png`,
+      timeout: 30000 // 30 seconds timeout for screenshot (fonts can be slow in headless mode)
     });
   }
 }

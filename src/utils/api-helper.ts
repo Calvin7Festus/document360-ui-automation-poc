@@ -8,10 +8,12 @@ export class ApiHelper {
   private config: ConfigManager;
   private responseObserver: ApiResponseObserver;
   private creationObserver: ApiCreationObserver;
+  private cleanupInProgress: boolean = false; // Prevent duplicate cleanup
 
   private static globalApiDefinitionIds: string[] = [];
   private static globalProjectDocumentVersionId: string = '';
   private static globalAuthToken: string = '';
+  private static cleanupCompleted: boolean = false; // Global cleanup state
 
   constructor(page: Page) {
     this.page = page;
@@ -52,26 +54,78 @@ export class ApiHelper {
    * Delete API definitions using the tracked IDs
    */
   async deleteTrackedApiDefinitions(): Promise<boolean> {
-    const trackedDefinitions = this.creationObserver.getTrackedDefinitions();
-    
-    if (trackedDefinitions.length > 0) {
-      loggers.cleanup.info(`Deleting ${trackedDefinitions.length} tracked API definitions using observer pattern`);
-      const result = await this.deleteDefinitionsUsingObserver(trackedDefinitions);
-      this.creationObserver.clearTracked();
-      loggers.cleanup.info(`Cleanup completed: ${result ? 'success' : 'failed'}`);
-      return result;
-    }
-    
-    if (ApiHelper.globalApiDefinitionIds.length === 0) {
-      loggers.cleanup.info('No API definitions tracked for deletion');
+    // Prevent duplicate cleanup attempts
+    if (this.cleanupInProgress) {
       return true;
     }
 
-    loggers.cleanup.info(`Deleting ${ApiHelper.globalApiDefinitionIds.length} tracked API definitions using legacy pattern`);
-    const result = await this.deleteLegacyTrackedDefinitions();
-    ApiHelper.globalApiDefinitionIds = [];
-    loggers.cleanup.info(`Cleanup completed: ${result ? 'success' : 'failed'}`);
-    return result;
+    if (ApiHelper.cleanupCompleted) {
+      return true;
+    }
+
+    this.cleanupInProgress = true;
+
+    try {
+      const trackedDefinitions = this.creationObserver.getTrackedDefinitions();
+      
+      if (trackedDefinitions.length > 0) {
+        loggers.cleanup.info(`Deleting ${trackedDefinitions.length} tracked API definitions using observer pattern`);
+        const result = await this.deleteDefinitionsUsingObserver(trackedDefinitions);
+        this.creationObserver.clearTracked();
+        
+        if (result) {
+          ApiHelper.cleanupCompleted = true;
+        }
+        
+        loggers.cleanup.info(`Cleanup completed: ${result ? 'success' : 'failed'}`);
+        return result;
+      }
+      
+      if (ApiHelper.globalApiDefinitionIds.length === 0) {
+        loggers.cleanup.info('No API definitions tracked for deletion');
+        ApiHelper.cleanupCompleted = true;
+        return true;
+      }
+
+      loggers.cleanup.info(`Deleting ${ApiHelper.globalApiDefinitionIds.length} tracked API definitions using legacy pattern`);
+      const result = await this.deleteLegacyTrackedDefinitions();
+      ApiHelper.globalApiDefinitionIds = [];
+      
+      if (result) {
+        ApiHelper.cleanupCompleted = true;
+      }
+      
+      loggers.cleanup.info(`Cleanup completed: ${result ? 'success' : 'failed'}`);
+      return result;
+    } finally {
+      this.cleanupInProgress = false;
+    }
+  }
+
+  /**
+   * Reset cleanup state (call this at the start of each test)
+   */
+  public static resetCleanupState(): void {
+    ApiHelper.cleanupCompleted = false;
+  }
+
+  /**
+   * Check if API definition exists before attempting to delete
+   */
+  private async checkApiExists(apiDefinitionId: string, authToken: string): Promise<boolean> {
+    try {
+      const response = await this.page.request.get(`${this.config.get('API_BASE_URL')}/api/v2/apidefinitions/${apiDefinitionId}`, {
+        headers: {
+          'authorization': `Bearer ${authToken}`,
+          'accept': 'application/json',
+          'projectid': this.config.getEnvironmentConfig().projectId
+        }
+      });
+
+      return response.status() === 200;
+    } catch (error) {
+      return false; // Assume it doesn't exist if we can't check
+    }
   }
 
   /**
@@ -83,20 +137,35 @@ export class ApiHelper {
     authToken: string;
   }>): Promise<boolean> {
     try {
-      const apiDefinitionIds = definitions.map(d => d.apiDefinitionId);
+      // Deduplicate API definition IDs to avoid sending duplicates to the API
+      const allApiIds = definitions.map(d => d.apiDefinitionId);
+      const uniqueApiIds = [...new Set(allApiIds)];
       const { projectDocumentVersionId, authToken } = definitions[0];
       
-      loggers.api.debug(`Making bulk delete request for IDs: ${apiDefinitionIds.join(', ')}`);
+      // Check if APIs exist before attempting to delete
+      const existingApis: string[] = [];
+      for (const apiId of uniqueApiIds) {
+        const exists = await this.checkApiExists(apiId, authToken);
+        if (exists) {
+          existingApis.push(apiId);
+        }
+      }
+      
+      if (existingApis.length === 0) {
+        return true; // Nothing to delete
+      }
+      
+      loggers.api.debug(`Making bulk delete request for existing IDs: ${existingApis.join(', ')}`);
       
       const response = await this.page.request.post(`${this.config.get('API_BASE_URL')}/api/v2/apidefinitions/bulkdelete`, {
         headers: this.buildDeleteHeaders(authToken),
         data: {
-          apiDefinitionList: apiDefinitionIds,
+          apiDefinitionList: existingApis,
           projectDocumentVersionId: projectDocumentVersionId
         }
       });
 
-      return await this.handleDeleteResponse(response, apiDefinitionIds.length);
+      return await this.handleDeleteResponse(response, existingApis.length);
     } catch (error) {
       loggers.api.error('Failed to delete API definitions using observer pattern', error);
       return false;
@@ -205,9 +274,6 @@ export class ApiHelper {
             
             if (authToken) {
               ApiHelper.globalAuthToken = authToken;
-              console.log(`✅ Global auth token set from captured request: ${authToken.substring(0, 10)}...`);
-            } else {
-              console.log(`⚠️ No auth token captured from requests yet`);
             }
             
             resolve({

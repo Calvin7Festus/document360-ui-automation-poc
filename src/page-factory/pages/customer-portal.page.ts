@@ -176,18 +176,88 @@ export class CustomerPortalPage extends UIActions {
 
     // Navigation methods
     async navigateToCustomerPortal(customerPortalUrl: string): Promise<void> {
-        console.log(`🌐 Navigating to customer portal: ${customerPortalUrl}`);
-        await this.page.goto(customerPortalUrl);
-        await this.page.waitForLoadState('networkidle');
-        await this.page.waitForLoadState('domcontentloaded');
-        await this.page.waitForTimeout(3000); // Extra wait for Angular/dynamic content to load
-        console.log(`✅ Customer portal navigation completed`);
+        // Retry navigation up to 3 times for headless mode stability
+        let attempts = 0;
+        const maxAttempts = 3;
+        
+        while (attempts < maxAttempts) {
+            try {
+                attempts++;
+                
+                await this.page.goto(customerPortalUrl, { 
+                    waitUntil: 'networkidle',
+                    timeout: 30000 // 30 second timeout for navigation
+                });
+                
+                await this.page.waitForLoadState('domcontentloaded');
+                
+                // Wait for the page to be fully loaded - increase timeout for headless mode
+                await this.page.waitForTimeout(3000);
+                
+                // Verify the page loaded successfully
+                await this.page.waitForSelector('body', { state: 'visible', timeout: 15000 });
+                
+                // Success - break out of retry loop
+                break;
+                
+            } catch (error) {
+                if (attempts === maxAttempts) {
+                    throw new Error(`Failed to navigate to customer portal after ${maxAttempts} attempts: ${error}`);
+                }
+                
+                // Wait before retry
+                await this.page.waitForTimeout(2000);
+            }
+        }
     }
 
     async clickOnApiDocumentation(): Promise<void> {
-        await this.apiDocumentationLink.waitFor({ state: 'visible' });
-        await this.apiDocumentationLink.click();
+        // Try multiple selectors for API documentation link
+        const apiDocSelectors = [
+            'a[href="/apidocs"]',
+            'a[href*="apidocs"]',
+            'a:has-text("API Documentation")',
+            'a:has-text("API Docs")',
+            '.nav-link:has-text("API")'
+        ];
+        
+        let apiDocLink: Locator | null = null;
+        
+        for (const selector of apiDocSelectors) {
+            try {
+                const link = this.page.locator(selector).first();
+                await link.waitFor({ state: 'visible', timeout: 15000 });
+                apiDocLink = link;
+                break;
+            } catch (error) {
+                // Try next selector
+                continue;
+            }
+        }
+        
+        if (!apiDocLink) {
+            // Debug: Log available links to help troubleshoot
+            const allLinks = await this.page.locator('a').all();
+            const linkTexts = await Promise.all(
+                allLinks.slice(0, 10).map(async (link) => {
+                    try {
+                        const text = await link.textContent();
+                        const href = await link.getAttribute('href');
+                        return `"${text}" (href: ${href})`;
+                    } catch {
+                        return 'N/A';
+                    }
+                })
+            );
+            
+            throw new Error(`Could not find API documentation link in customer portal. Available links: ${linkTexts.join(', ')}`);
+        }
+        
+        await apiDocLink.click();
         await this.page.waitForLoadState('networkidle');
+        
+        // Additional wait for API documentation to load
+        await this.page.waitForTimeout(2000);
     }
 
     async clickOnIntroduction(): Promise<void> {
@@ -613,14 +683,14 @@ export class CustomerPortalPage extends UIActions {
         // Take screenshot for validation
         await this.takeValidationScreenshot(`api-endpoint-${expectedMethod.toLowerCase()}-${expectedPath.replace('/', '')}`);
         
-        console.log(`✅ Complete API endpoint validation completed: ${expectedMethod} ${expectedPath}`);
     }
 
     // Screenshot utility
     async takeValidationScreenshot(name: string): Promise<void> {
         await this.page.screenshot({ 
             path: `test-results/validation-screenshots/customer-portal-${name}-${Date.now()}.png`,
-            fullPage: true 
+            fullPage: true,
+            timeout: 30000 // 30 seconds timeout for screenshot (fonts can be slow in headless mode)
         });
     }
 
