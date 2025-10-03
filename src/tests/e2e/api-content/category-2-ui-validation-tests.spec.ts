@@ -1,17 +1,42 @@
 import { test } from '@playwright/test';
-import { TestSetupManager, TestSetupContext } from '../../../utils/test-setup/test-setup-manager';
+import { ApiDataSeeder } from '../../../utils/data-seeding/api-data-seeder';
 import { getTestDataProvider } from '../../../utils/data/test-data-provider';
+import { ApiDocPage } from '../../../page-factory/pages/api-doc.page';
+import { ConfigManager } from '../../../utils/config/config-manager';
 
-test.describe('Category 2: UI Content Validation Tests', () => {
+test.describe('Category 2: UI Content Validation Tests (API-Seeded)', () => {
   // Configure longer timeouts for UI validation tests (headless mode can be slower)
   test.setTimeout(60000); // 60 seconds per test
-  let setupManager: TestSetupManager;
+  let apiSeeder: ApiDataSeeder;
+  let apiDocPage: ApiDocPage;
+  let seededApiDefinitionId: string;
 
   // Get test data for validation tests
   const testDataProvider = getTestDataProvider();
 
   test.beforeEach(async ({ page }) => {
-    setupManager = new TestSetupManager(page);
+    // Initialize API seeder and page objects
+    apiSeeder = new ApiDataSeeder(page);
+    apiDocPage = new ApiDocPage(page);
+
+    // Setup auth interceptor and navigate
+    await apiSeeder.setupAuthInterceptor();
+    const configManager = ConfigManager.getInstance();
+    await page.goto(configManager.get<string>('BASE_URL'));
+    await page.waitForLoadState('domcontentloaded');
+
+    // Category 2: Upload File -> Create API Definition
+    const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
+    if (!testDataFile) throw new Error('Comprehensive test data not found');
+    
+    seededApiDefinitionId = await apiSeeder.seedForCategory2(testDataFile);
+    
+    // Refresh page to ensure seeded data is visible in UI
+    await page.reload();
+    await page.waitForLoadState('domcontentloaded');
+    
+    // Wait for API documentation to be visible instead of networkidle
+    await page.waitForSelector('text=Comprehensive Test API', { timeout: 30000 });
   });
 
   // Use stable test data for validation tests
@@ -20,36 +45,37 @@ test.describe('Category 2: UI Content Validation Tests', () => {
   ];
 
   for (const testData of validationTestData) {
-    test(`TC-007: Validate Complete Introduction Section - ${testData.expectedTitle} @api-content`, async ({ page }) => {
+    test(`TC-007: Validate Complete Introduction Section - ${testData.expectedTitle} @api-content @api-seeded`, async ({ page }) => {
       const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
       if (!testDataFile) {
         throw new Error('Comprehensive test data not found');
       }
       
-      const testContext = await setupManager.setupTestWithData(testDataFile);
-      const { apiDocPage, testData: parsedTestData } = testContext;
-      await apiDocPage.validateCompleteIntroductionSection(parsedTestData);
+      // Parse the test data for validation (API definition already seeded in beforeEach)
+      const apiSpecParser = await apiSeeder.getApiSpecParser(testDataFile);
+      const testDataParsed = await apiSeeder.getTestData(testDataFile);
+      
+      // Validate using the seeded API definition
+      await apiDocPage.validateCompleteIntroductionSection(testDataParsed);
     });
     
-    test(`TC-008: Validate Complete API Documentation Display - ${testData.expectedTitle} @api-content`, async ({ page }) => {
+    test(`TC-008: Validate Complete API Documentation Display - ${testData.expectedTitle} @api-content @api-seeded`, async ({ page }) => {
       const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
       if (!testDataFile) {
         throw new Error('Comprehensive test data not found');
       }
       
-      const testContext = await setupManager.setupTestWithData(testDataFile);
-      const { apiDocPage, apiSpecParser, testData: parsedTestData } = testContext;
-      await apiDocPage.validateCompleteApiDocumentation(apiSpecParser, parsedTestData, page);
+      // Parse the test data for validation (API definition already seeded in beforeEach)
+      const apiSpecParser = await apiSeeder.getApiSpecParser(testDataFile);
+      const testDataParsed = await apiSeeder.getTestData(testDataFile);
+      
+      // Validate using the seeded API definition
+      await apiDocPage.validateCompleteApiDocumentation(apiSpecParser, testDataParsed, page);
     });
   }
 
-  test.afterEach(async ({ page }) => {
-    if (setupManager) {
-      await setupManager.teardownTest();
-    } else {
-      const { ApiHelper } = await import('../../../utils/api/api-helper');
-      const apiHelper = new ApiHelper(page);
-      await apiHelper.deleteTrackedApiDefinitions();
-    }
+  test.afterEach(async () => {
+    // Category 2: Delete API definition (bulk delete)
+    await apiSeeder.cleanup();
   });
 });

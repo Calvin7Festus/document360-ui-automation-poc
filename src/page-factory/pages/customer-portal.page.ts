@@ -1,6 +1,6 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { UIActions } from '../../commons/ui-actions';
-import { escapeTextForSelector, createSafeTextSelector } from '../../utils/ui/locator-utils';
+import { escapeTextForSelector, createSafeTextSelector } from '../../commons/locator-utils';
 
 export class CustomerPortalPage extends UIActions {
 
@@ -159,8 +159,7 @@ export class CustomerPortalPage extends UIActions {
         this.getApiTitleByText = (title: string) => this.page.locator(`.article-tilte b:has-text("${title}"), .article-title:has-text("${title}")`);
         this.getApiVersionByText = (version: string) => this.page.locator(`.article-version:has-text("${version}"), small.article-version:has-text("${version}")`);
         this.getApiDescriptionByText = (description: string) => {
-            const safeSelector = createSafeTextSelector(description);
-            return this.page.locator(`.article-description p${safeSelector}`).first();
+            return this.page.locator(`.article-description p:has-text("${escapeTextForSelector(description)}")`).first();
         };
         this.getServerUrl = (index: number) => this.page.locator('a.server-url').nth(index);
         this.getServerDescription = (index: number) => this.page.locator('em.server-description').nth(index);

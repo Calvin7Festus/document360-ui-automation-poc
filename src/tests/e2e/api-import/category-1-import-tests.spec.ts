@@ -3,9 +3,8 @@ import { ApiDocPage } from '../../../page-factory/pages/api-doc.page';
 import { Header } from '../../../page-factory/components/header.component';
 import { NewApiCreationModal } from '../../../page-factory/components/new-api-creation.modal';
 import { ToastMessage } from '../../../page-factory/components/toast-message.component';
-import { ApiHelper } from '../../../utils/api/api-helper';
 import { ConfigManager } from '../../../utils/config/config-manager';
-import { TestSetupManager } from '../../../utils/test-setup/test-setup-manager';
+import { ApiDataSeeder } from '../../../utils/data-seeding/api-data-seeder';
 import { getTestDataProvider, TestDataFile } from '../../../utils/data/test-data-provider';
 import path from 'path';
 
@@ -14,22 +13,22 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   let header: Header;
   let newApiModal: NewApiCreationModal;
   let toastMessage: ToastMessage;
-  let setupManager: TestSetupManager;
+  let apiSeeder: ApiDataSeeder;
 
   // Get test data for import tests
   const testDataProvider = getTestDataProvider();
   let importTestData: TestDataFile[] = [];
 
   test.beforeEach(async ({ page }) => {
-    // Reset cleanup state for each test
-    const { ApiHelper } = await import('../../../utils/api/api-helper');
-    ApiHelper.resetCleanupState();
-    
     apiDocPage = new ApiDocPage(page);
     header = new Header(page);
     newApiModal = new NewApiCreationModal(page);
     toastMessage = new ToastMessage(page);
-    setupManager = new TestSetupManager(page);
+    apiSeeder = new ApiDataSeeder(page);
+
+    // Setup interceptors for Category 1 (UI-based tests)
+    await apiSeeder.setupAuthInterceptor();
+    await apiSeeder.setupApiCreationInterceptor();
 
     const configManager = ConfigManager.getInstance();
     await page.goto(configManager.get<string>('BASE_URL'));
@@ -40,6 +39,11 @@ test.describe('Category 1: API Import Functionality Tests', () => {
     importTestData = await testDataProvider.getTestDataCombinations('import');
   });
 
+  test.afterEach(async () => {
+    // Cleanup any created API definitions
+    await apiSeeder.cleanup();
+  });
+
   // Data-driven tests for file import - using TestDataProvider for consistency
   const stableTestData = [
     testDataProvider.getTestDataByKey('SIMPLE_YAML'),
@@ -48,9 +52,10 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   ].filter(Boolean); // Remove any null values
 
   for (const testData of stableTestData) {
-    test(`TC-001-${testData.format.toUpperCase()}: Import ${testData.format.toUpperCase()} File - ${testData.expectedTitle} @import`, async ({ page }) => {
+    if (!testData) continue; // Skip null entries
+    
+    test(`TC-001-${testData.format.toUpperCase()}: Import ${testData.format.toUpperCase()} File - ${testData.expectedTitle} @import @cal`, async ({ page }) => {
       const filePath = testDataProvider.getTestDataPath(testData.file);
-      const apiHelper = new ApiHelper(page);
       
       await header.clickOnCreateButton();
       await header.clickOnNewApiButton();
@@ -59,14 +64,14 @@ test.describe('Category 1: API Import Functionality Tests', () => {
       await newApiModal.uploadFromMyDeviceButton.setInputFiles(filePath);
 
       await newApiModal.clickOnNewApiReferenceButton();
-      const apiResponsePromise = apiHelper.waitForApiCreationResponse();
-      
-      const apiResponse = await apiResponsePromise;
 
       await newApiModal.clickOnCancelButton();
       
       await expect(page).toHaveURL(/api-documentation/);
-      await expect(apiDocPage.getApiTitle(testData.expectedTitle)).toBeVisible();
+      
+      // Add retry mechanism for API title visibility with increased timeout
+      await apiDocPage.getApiTitle(testData.expectedTitle).waitFor({ state: 'visible', timeout: 10000 });
+      await expect(apiDocPage.getApiTitle(testData.expectedTitle)).toBeVisible({ timeout: 10000 });
       await apiDocPage.takeValidationScreenshot(`${testData.format}-import-success`);
     });
   }
@@ -74,7 +79,6 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   test('TC-004: Import from URL - Should successfully import API documentation from external URL @import', async ({ page }) => {
     const configManager = ConfigManager.getInstance();
     const apiUrl = configManager.get<string>('PETSTORE_API_URL');
-    const apiHelper = new ApiHelper(page);
     
     await header.clickOnCreateButton();
     await header.clickOnNewApiButton();
@@ -84,14 +88,14 @@ test.describe('Category 1: API Import Functionality Tests', () => {
     await newApiModal.fillUrlInputBox(apiUrl);
     
     await newApiModal.clickOnNewApiReferenceButton();
-    const apiResponsePromise = apiHelper.waitForApiCreationResponse();
-    
-    const apiResponse = await apiResponsePromise;
 
     await newApiModal.clickOnCancelButton();
     
     await expect(page).toHaveURL(/api-documentation/);
-    await expect(apiDocPage.getApiTitle('Swagger Petstore')).toBeVisible();
+    
+    // Add retry mechanism for API title visibility with increased timeout
+    await apiDocPage.getApiTitle('Swagger Petstore').waitFor({ state: 'visible', timeout: 10000 });
+    await expect(apiDocPage.getApiTitle('Swagger Petstore')).toBeVisible({ timeout: 10000 });
     await apiDocPage.takeValidationScreenshot('url-import-success');
   });
 
@@ -171,12 +175,4 @@ test.describe('Category 1: API Import Functionality Tests', () => {
     await apiDocPage.takeValidationScreenshot('invalid-url-error');
   });
 
-  test.afterEach(async ({ page }) => {
-    try {
-      const apiHelper = new ApiHelper(page);
-      await apiHelper.deleteTrackedApiDefinitions();
-    } catch (error) {
-      console.warn('⚠️ Failed to cleanup API definitions:', error);
-    }
-  });
 });

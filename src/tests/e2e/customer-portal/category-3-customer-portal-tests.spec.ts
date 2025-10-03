@@ -1,28 +1,40 @@
 import { test, expect } from '@playwright/test';
 import { CustomerPortalPage } from '../../../page-factory/pages/customer-portal.page';
-import { TestSetupManager, TestSetupContext } from '../../../utils/test-setup/test-setup-manager';
+import { ApiDataSeeder } from '../../../utils/data-seeding/api-data-seeder';
 import { ConfigManager } from '../../../utils/config/config-manager';
 import { getTestDataProvider, TestDataFile } from '../../../utils/data/test-data-provider';
 
-test.describe('Category 3: Customer Portal Validation Tests', () => {
+test.describe('Category 3: Customer Portal Validation Tests (API-Seeded)', () => {
   // Configure longer timeouts for customer portal tests (headless mode can be slower)
   test.setTimeout(60000); // 60 seconds per test
   let customerPortalPage: CustomerPortalPage;
-  let setupManager: TestSetupManager;
+  let apiSeeder: ApiDataSeeder;
   let configManager: ConfigManager;
   let customerPortalUrl: string;
+  let seededApiDefinitionId: string;
 
   // Get test data for customer portal tests
   const testDataProvider = getTestDataProvider();
 
   test.beforeEach(async ({ page }) => {
-    // Initialize customer portal page object
+    // Initialize page objects and config
     customerPortalPage = new CustomerPortalPage(page);
-    setupManager = new TestSetupManager(page);
-    
-    // Get customer portal URL from config
+    apiSeeder = new ApiDataSeeder(page);
     configManager = ConfigManager.getInstance();
     customerPortalUrl = configManager.get<string>('CUSTOMER_PORTAL_URL');
+
+    // Setup auth interceptor and navigate to admin portal for API seeding
+    await apiSeeder.setupAuthInterceptor();
+    await page.goto(configManager.get<string>('BASE_URL'));
+    await page.waitForLoadState('domcontentloaded');
+    
+    // Category 3: Upload File -> Create API Definition -> Publish (in admin portal)
+    const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
+    if (!testDataFile) throw new Error('Comprehensive test data not found');
+    
+    seededApiDefinitionId = await apiSeeder.seedForCategory3(testDataFile);
+    
+    // Note: Tests will navigate to Customer Portal URL for validation
   });
 
   // Use stable test data for customer portal tests
@@ -31,14 +43,14 @@ test.describe('Category 3: Customer Portal Validation Tests', () => {
   ];
 
   for (const testData of customerPortalTestData) {
-    test(`TC-009: Validate Complete Introduction Section in Customer Portal - ${testData.expectedTitle} @cp`, async ({ page }) => {
+    test(`TC-009: Validate Complete Introduction Section in Customer Portal - ${testData.expectedTitle} @cp @api-seeded`, async ({ page }) => {
       const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
       if (!testDataFile) {
         throw new Error('Comprehensive test data not found');
       }
       
-      // Set up test context specifically for customer portal (publishes API documentation)
-      const testContext = await setupManager.setupTestForCustomerPortalWithData(testDataFile);
+      // Parse the test data for validation (API definition already seeded and published in beforeEach)
+      const testDataParsed = await apiSeeder.getTestData(testDataFile);
       
       // Navigate to customer portal
       await customerPortalPage.navigateToCustomerPortal(customerPortalUrl);
@@ -46,9 +58,8 @@ test.describe('Category 3: Customer Portal Validation Tests', () => {
       // Navigate to API documentation section
       await customerPortalPage.clickOnApiDocumentation();
       
-      // Validate complete introduction section (same validation as Category 2 but in customer portal)
-      const { testData: parsedTestData } = testContext;
-      await customerPortalPage.validateCompleteIntroductionSection(parsedTestData);
+      // Validate complete introduction section (using seeded and published API definition)
+      await customerPortalPage.validateCompleteIntroductionSection(testDataParsed);
       
       // Additional customer portal specific validations
       const brokenLinksCount = await customerPortalPage.validateNobrokenLinks();
@@ -59,14 +70,15 @@ test.describe('Category 3: Customer Portal Validation Tests', () => {
       expect(enabledLinks).toBe(totalLinks);
     });
     
-    test(`TC-010: Validate Complete API Documentation Display in Customer Portal - ${testData.expectedTitle} @cp`, async ({ page }) => {
+    test(`TC-010: Validate Complete API Documentation Display in Customer Portal - ${testData.expectedTitle} @cp @api-seeded`, async ({ page }) => {
       const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
       if (!testDataFile) {
         throw new Error('Comprehensive test data not found');
       }
       
-      // Set up test context specifically for customer portal (publishes API documentation)
-      const testContext = await setupManager.setupTestForCustomerPortalWithData(testDataFile);
+      // Parse the test data for validation (API definition already seeded and published in beforeEach)
+      const apiSpecParser = await apiSeeder.getApiSpecParser(testDataFile);
+      const testDataParsed = await apiSeeder.getTestData(testDataFile);
       
       // Navigate to customer portal
       await customerPortalPage.navigateToCustomerPortal(customerPortalUrl);
@@ -74,9 +86,8 @@ test.describe('Category 3: Customer Portal Validation Tests', () => {
       // Navigate to API documentation section
       await customerPortalPage.clickOnApiDocumentation();
       
-      // Validate complete API documentation (same validation as Category 2 but in customer portal)
-      const { apiSpecParser, testData: parsedTestData } = testContext;
-      await customerPortalPage.validateCompleteApiDocumentation(apiSpecParser, parsedTestData, page);
+      // Validate complete API documentation (using seeded and published API definition)
+      await customerPortalPage.validateCompleteApiDocumentation(apiSpecParser, testDataParsed, page);
       
       // Additional customer portal specific validations
       const timeoutErrorsCount = await customerPortalPage.validateNoTimeoutErrors();
@@ -90,14 +101,8 @@ test.describe('Category 3: Customer Portal Validation Tests', () => {
     });
   }
 
-  test.afterEach(async ({ page }) => {
-    try {
-      // Use the setup manager's teardown (uses stored ApiHelper instance with captured auth token)
-      if (setupManager) {
-        await setupManager.teardownTest();
-      }
-    } catch (error) {
-      console.warn('⚠️ Failed to cleanup API definitions in Category 3:', error);
-    }
+  test.afterEach(async () => {
+    // Category 3: Delete API definition (bulk delete)
+    await apiSeeder.cleanup();
   });
 });

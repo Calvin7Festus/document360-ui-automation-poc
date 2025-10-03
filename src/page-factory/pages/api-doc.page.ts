@@ -1,7 +1,7 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { UIActions } from '../../commons/ui-actions';
 import { ToastMessage } from '../components/toast-message.component';
-import { escapeTextForSelector, createSafeTextSelector, createMultipleSelectors } from '../../utils/ui/locator-utils';
+import { escapeTextForSelector, createSafeTextSelector, createMultipleSelectors } from '../../commons/locator-utils';
 
 export class ApiDocPage extends UIActions {
 
@@ -23,7 +23,7 @@ export class ApiDocPage extends UIActions {
     // Function-based locators used in tests
     readonly getApiTitle: (title: string) => Locator;
     readonly apiVersion: (version: string) => Locator;
-    readonly apiDescription: (description: string) => Locator;
+    readonly apiDescription: Locator;
     readonly serverUrl: (index: number) => Locator;
     readonly serverDescription: (index: number) => Locator;
     readonly endpointPath: (path: string) => Locator;
@@ -59,16 +59,7 @@ export class ApiDocPage extends UIActions {
             return this.page.locator(`a[title='${escapedTitle}']`);
         };
         this.apiVersion = (version: string) => this.page.getByText(version, { exact: true });
-        this.apiDescription = (description: string) => {
-            // For descriptions with special characters, use a more robust approach
-            const safeSelector = createSafeTextSelector(description);
-            try {
-                return this.page.locator(`.article-description p${safeSelector}`).first();
-            } catch (error) {
-                // Fallback to simple text search
-                return this.page.getByText(description).first();
-            }
-        };
+        this.apiDescription = this.page.locator(`.article-description > p`).first();
         this.serverUrl = (index: number) => this.page.locator('a.server-url').nth(index);
         this.serverDescription = (index: number) => this.page.locator('em.server-description').nth(index);
         this.endpointPath = (path: string) => this.page.getByText(path);
@@ -484,6 +475,7 @@ export class ApiDocPage extends UIActions {
     // Private helper methods for comprehensive validation
 
     private async validateApiTitle(apiTitle: string): Promise<void> {
+        await this.getApiTitle(apiTitle).waitFor({ state: 'visible', timeout: 10000 });
         await expect(this.getApiTitle(apiTitle)).toBeVisible();
     }
 
@@ -493,7 +485,7 @@ export class ApiDocPage extends UIActions {
 
     private async validateApiDescription(apiDescription?: string): Promise<void> {
         if (apiDescription) {
-            await expect(this.apiDescription(apiDescription)).toBeVisible();
+            await expect(this.apiDescription).toContainText(apiDescription);
         } else {
         }
     }

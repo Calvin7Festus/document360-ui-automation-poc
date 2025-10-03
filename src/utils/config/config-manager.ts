@@ -27,6 +27,7 @@ export class ConfigManager {
     // Load environment variables with fallbacks
     this.config.set('BASE_URL', process.env.TEST_URL || 'https://portal.document360.io/1bff9bc5-3c41-43fe-852a-5442d48212ca/api-documentation');
     this.config.set('PROJECT_ID', process.env.PROJECT_ID || '1bff9bc5-3c41-43fe-852a-5442d48212ca');
+    this.config.set('PROJECT_VERSION_ID', process.env.PROJECT_VERSION_ID || 'e5cfdc47-43fe-42ac-b3ab-372dae118da5');
     this.config.set('API_BASE_URL', process.env.API_BASE_URL || 'https://portal.document360.io');
     this.config.set('CUSTOMER_PORTAL_URL', process.env.CUSTOMER_PORTAL_URL || 'https://your-customer-portal.com');
     this.config.set('FALLBACK_URL', process.env.FALLBACK_URL || 'https://portal.document360.io');
