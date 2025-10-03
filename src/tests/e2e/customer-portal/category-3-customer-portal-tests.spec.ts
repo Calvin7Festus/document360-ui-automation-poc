@@ -66,12 +66,22 @@ test.describe('Category 3: Customer Portal Validation Tests', () => {
   });
 
   test.afterEach(async ({ page }) => {
-    if (setupManager) {
-      await setupManager.teardownTest();
-    } else {
-      const { ApiHelper } = await import('../../../utils/api-helper');
-      const apiHelper = new ApiHelper(page);
-      await apiHelper.deleteTrackedApiDefinitions();
+    try {
+      console.log('🧹 Starting Category 3 cleanup...');
+      
+      // Use the setup manager's teardown (uses stored ApiHelper instance with captured auth token)
+      if (setupManager) {
+        await setupManager.teardownTest();
+        console.log('✅ Category 3 cleanup completed successfully');
+      } else {
+        // Fallback: Direct cleanup if setup manager is not available
+        const { ApiHelper } = await import('../../../utils/api-helper');
+        const apiHelper = new ApiHelper(page);
+        await apiHelper.deleteTrackedApiDefinitions();
+        console.log('✅ Category 3 fallback cleanup completed');
+      }
+    } catch (error) {
+      console.warn('⚠️ Failed to cleanup API definitions in Category 3:', error);
     }
   });
 });

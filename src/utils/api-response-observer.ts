@@ -85,7 +85,8 @@ export class ApiResponseObserver {
 
     this.isListening = true;
     this.page.on('response', this.handleResponse.bind(this));
-    console.log('👂 API Response Observer started listening');
+    this.page.on('request', this.handleRequest.bind(this)); // Also listen to requests for auth tokens
+    console.log('👂 API Response Observer started listening to responses and requests');
   }
 
   /**
@@ -98,6 +99,7 @@ export class ApiResponseObserver {
 
     this.isListening = false;
     this.page.off('response', this.handleResponse.bind(this));
+    this.page.off('request', this.handleRequest.bind(this)); // Stop listening to requests too
     console.log('🔇 API Response Observer stopped listening');
   }
 
@@ -133,6 +135,49 @@ export class ApiResponseObserver {
     } catch (error) {
       this.notifyError(error as Error);
     }
+  }
+
+  /**
+   * Handle outgoing API requests to capture auth tokens
+   */
+  private handleRequest(request: any): void {
+    try {
+      // Filter for API-related requests
+      if (!this.isApiRequest(request)) {
+        return;
+      }
+
+      const authHeader = request.headers()['authorization'];
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const token = authHeader.replace('Bearer ', '');
+        console.log(`🔍 Captured auth token from request to ${request.url()}: ${token.substring(0, 10)}...`);
+        
+        // Store the token globally for cleanup use
+        // We need to import ApiHelper here to set the global token
+        this.storeAuthTokenGlobally(token);
+      }
+    } catch (error) {
+      console.error('❌ Error handling request for auth token:', error);
+    }
+  }
+
+  /**
+   * Store auth token globally (we'll need to import ApiHelper for this)
+   */
+  private storeAuthTokenGlobally(token: string): void {
+    // We'll set this on the global object for now, then ApiHelper can pick it up
+    (globalThis as any).__capturedAuthToken = token;
+    console.log(`✅ Stored auth token globally: ${token.substring(0, 10)}...`);
+  }
+
+  /**
+   * Determine if the request is API-related
+   */
+  private isApiRequest(request: any): boolean {
+    const url = request.url();
+    return url.includes('/api/') || 
+           url.includes('/apidefinitions') || 
+           url.includes('/upload-spec-file');
   }
 
   /**
@@ -196,7 +241,9 @@ export class ApiCreationObserver implements IApiResponseObserver {
     if (response.type === 'creation' && response.body?.success && response.body?.result?.apiDefinitionId) {
       const apiDefinitionId = response.body.result.apiDefinitionId;
       const projectDocumentVersionId = response.body.result.projectDocumentVersionId;
-      const authToken = response.headers['authorization']?.replace('Bearer ', '') || '';
+      
+      // Get auth token from globally captured token (from request interception)
+      const authToken = (globalThis as any).__capturedAuthToken || '';
 
       this.trackedApiDefinitions.push({
         apiDefinitionId,
@@ -204,7 +251,7 @@ export class ApiCreationObserver implements IApiResponseObserver {
         authToken
       });
 
-      console.log(`📝 Tracked API creation: ${apiDefinitionId}`);
+      console.log(`📝 Tracked API creation: ${apiDefinitionId} with token: ${authToken ? 'Available' : 'Missing'}`);
     }
   }
 

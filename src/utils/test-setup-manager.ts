@@ -32,6 +32,7 @@ export interface TestSetupContext {
 export class TestSetupManager {
   private page: Page;
   private context: TestSetupContext | null = null;
+  private apiHelper: ApiHelper | null = null; // Store the ApiHelper instance for cleanup
 
   constructor(page: Page) {
     this.page = page;
@@ -96,6 +97,13 @@ export class TestSetupManager {
       throw new Error('Test setup has not been completed. Call setupTest() first.');
     }
     return this.context;
+  }
+
+  /**
+   * Get the ApiHelper instance used during setup for cleanup
+   */
+  getApiHelper(): ApiHelper | null {
+    return this.apiHelper;
   }
 
   // Private helper methods for setup steps
@@ -176,7 +184,7 @@ export class TestSetupManager {
     shouldPublish: boolean = false
   ): Promise<void> {
     const { header, newApiModal, apiDocPage } = pageObjects;
-    const apiHelper = new ApiHelper(this.page);
+    this.apiHelper = new ApiHelper(this.page); // Store the instance for cleanup
     
     // Get API file path for upload
     const apiFilePath = path.join(__dirname, '..', TEST_CONFIG.TEST_DATA_DIR, TEST_DATA_CONFIG.apiSpecFile);
@@ -190,15 +198,20 @@ export class TestSetupManager {
     await newApiModal.uploadFromMyDeviceButton.setInputFiles(apiFilePath);
     
     // Create API and capture response for cleanup
-    const apiResponsePromise = apiHelper.waitForApiCreationResponse();
+    const apiResponsePromise = this.apiHelper.waitForApiCreationResponse();
     await newApiModal.clickOnNewApiReferenceButton();
     const apiResponse = await apiResponsePromise;
     
     if (apiResponse) {
       loggers.setup.info(`API creation successful: ${apiResponse.apiDefinitionId}`);
-      apiHelper.trackApiDefinitionManually(
+      
+      // Get the auth token that was captured during the API response or extract from browser
+      const authToken = await this.apiHelper.getCurrentAuthToken();
+      
+      this.apiHelper.trackApiDefinitionManually(
         apiResponse.apiDefinitionId, 
-        apiResponse.projectDocumentVersionId
+        apiResponse.projectDocumentVersionId,
+        authToken // Pass the auth token for cleanup
       );
     } else {
       loggers.setup.warn('Failed to capture API creation response, attempting URL extraction');
@@ -210,7 +223,11 @@ export class TestSetupManager {
         const extractedApiId = apiIdMatch[1];
         loggers.setup.info(`Extracted API ID from URL: ${extractedApiId}`);
         const defaultProjectVersionId = 'extracted-from-url';
-        apiHelper.trackApiDefinitionManually(extractedApiId, defaultProjectVersionId);
+        
+        // Get the auth token even for URL extraction
+        const authToken = await this.apiHelper.getCurrentAuthToken();
+        
+        this.apiHelper.trackApiDefinitionManually(extractedApiId, defaultProjectVersionId, authToken);
       } else {
         loggers.setup.error('Failed to extract API ID from URL');
       }
@@ -233,8 +250,16 @@ export class TestSetupManager {
   }
 
   private async cleanupApiDefinitions(): Promise<void> {
-    const apiHelper = new ApiHelper(this.page);
-    await apiHelper.deleteTrackedApiDefinitions();
+    if (this.apiHelper) {
+      // Use the same ApiHelper instance that was used during setup (has captured auth token)
+      loggers.cleanup.info('Using stored ApiHelper instance for cleanup');
+      await this.apiHelper.deleteTrackedApiDefinitions();
+    } else {
+      // Fallback to creating a new instance (should not happen in normal flow)
+      loggers.cleanup.warn('No stored ApiHelper instance, creating new one for cleanup');
+      const apiHelper = new ApiHelper(this.page);
+      await apiHelper.deleteTrackedApiDefinitions();
+    }
   }
 
   private async resetNavigation(): Promise<void> {

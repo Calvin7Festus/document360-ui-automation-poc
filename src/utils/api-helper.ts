@@ -200,9 +200,14 @@ export class ApiHelper {
             
             ApiHelper.trackApiDefinition(apiDefinitionId, projectDocumentVersionId);
             
-            const authToken = responseData.headers['authorization']?.replace('Bearer ', '') || '';
+            // Get auth token from globally captured token (from request interception)
+            const authToken = (globalThis as any).__capturedAuthToken || '';
+            
             if (authToken) {
               ApiHelper.globalAuthToken = authToken;
+              console.log(`✅ Global auth token set from captured request: ${authToken.substring(0, 10)}...`);
+            } else {
+              console.log(`⚠️ No auth token captured from requests yet`);
             }
             
             resolve({
@@ -222,16 +227,93 @@ export class ApiHelper {
   }
 
   /**
-   * Get the response observer instance
+   * Get the current global auth token
    */
-  public getResponseObserver(): ApiResponseObserver {
-    return this.responseObserver;
+  public static getGlobalAuthToken(): string {
+    return ApiHelper.globalAuthToken;
   }
 
+  /**
+   * Get auth token from browser session/cookies/localStorage
+   */
+  public async extractAuthTokenFromBrowser(): Promise<string> {
+    try {
+      // Try to get auth token from localStorage
+      const localStorageToken = await this.page.evaluate(() => {
+        const possibleKeys = ['authToken', 'token', 'access_token', 'accessToken', 'bearer_token', 'bearerToken'];
+        for (const key of possibleKeys) {
+          const token = localStorage.getItem(key);
+          if (token) return token;
+        }
+        return null;
+      });
+
+      if (localStorageToken) return localStorageToken;
+
+      // Try to get auth token from sessionStorage
+      const sessionStorageToken = await this.page.evaluate(() => {
+        const possibleKeys = ['authToken', 'token', 'access_token', 'accessToken', 'bearer_token', 'bearerToken'];
+        for (const key of possibleKeys) {
+          const token = sessionStorage.getItem(key);
+          if (token) return token;
+        }
+        return null;
+      });
+
+      if (sessionStorageToken) return sessionStorageToken;
+
+      // Try to get auth token from cookies
+      const cookies = await this.page.context().cookies();
+      const authCookie = cookies.find(cookie => 
+        cookie.name.toLowerCase().includes('auth') || 
+        cookie.name.toLowerCase().includes('token') ||
+        cookie.name.toLowerCase().includes('bearer')
+      );
+
+      return authCookie?.value || '';
+    } catch (error) {
+      console.error(`❌ Error extracting auth token from browser:`, error);
+      return '';
+    }
+  }
+
+  /**
+   * Get the current global auth token (instance method)
+   * Falls back to extracting from browser if global token is empty
+   */
+  public async getCurrentAuthToken(): Promise<string> {
+    // First try the global token
+    if (ApiHelper.globalAuthToken) {
+      return ApiHelper.globalAuthToken;
+    }
+
+    // Check if we captured a token from request interception
+    const capturedToken = (globalThis as any).__capturedAuthToken;
+    if (capturedToken) {
+      ApiHelper.globalAuthToken = capturedToken; // Store it globally
+      return capturedToken;
+    }
+
+    // If no token captured, try to extract from browser as fallback
+    const browserToken = await this.extractAuthTokenFromBrowser();
+    if (browserToken) {
+      ApiHelper.globalAuthToken = browserToken;
+      return browserToken;
+    }
+
+    return '';
+  }
   /**
    * Get the creation observer instance
    */
   public getCreationObserver(): ApiCreationObserver {
     return this.creationObserver;
+  }
+
+  /**
+   * Get the response observer instance
+   */
+  public getResponseObserver(): ApiResponseObserver {
+    return this.responseObserver;
   }
 }
