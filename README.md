@@ -10,6 +10,7 @@ document360-ui-automation-poc/
 │   ├── page-factory/             # Page Object Model classes
 │   │   ├── pages/                # Page Objects
 │   │   │   ├── api-doc.page.ts   # Main API documentation page (968 lines)
+│   │   │   ├── customer-portal.page.ts # Customer portal page with specialized validations
 │   │   │   └── login.page.ts     # Login page
 │   │   └── components/           # Reusable UI Components
 │   │       ├── header.component.ts
@@ -32,7 +33,7 @@ document360-ui-automation-poc/
 │   │   └── e2e/                  # End-to-End tests
 │   │       ├── api-import/       # Import functionality tests (6)
 │   │       ├── api-content/      # UI content validation tests (2 consolidated)
-│   │       └── customer-portal/  # Customer portal tests (4)
+│   │       └── customer-portal/  # Customer portal tests (2 mirrored)
 │   └── test-data/                # Test data files
 │       └── create-api-doc/       # API specification files
 ├── playwright.config.ts          # Playwright configuration
@@ -62,7 +63,7 @@ npm run test
 # Run specific category tests
 npm run test:category1  # Import functionality (6 tests)
 npm run test:category2  # UI content validation (2 consolidated tests)
-npm run test:category3  # Customer portal validation (4 tests)
+npm run test:category3  # Customer portal validation (2 mirrored tests)
 
 # Run comprehensive test suite
 npm run test:comprehensive
@@ -75,7 +76,7 @@ npm run test:report     # View HTML report
 
 ## 📊 Test Coverage
 
-### **12 Total Test Cases (Consolidated & Optimized)**
+### **10 Total Test Cases (Consolidated & Optimized)**
 
 #### **Category 1: Import Functionality (6 tests)**
 - **Location**: `src/tests/e2e/api-import/`
@@ -96,16 +97,25 @@ npm run test:report     # View HTML report
   - Dynamic endpoint validation from API specifications
   - Screenshot validation for visual verification
 
-#### **Category 3: Customer Portal Validation (4 tests)**
+#### **Category 3: Customer Portal Validation (2 mirrored tests)**
 - **Location**: `src/tests/e2e/customer-portal/`
-- **Coverage**: Published content, navigation, consistency, performance
-- **Test Cases**: TC-062 to TC-065
+- **Coverage**: Published API documentation in customer portal with enhanced validations
+- **Test Cases**: 
+  - **TC-009**: Complete Introduction Section in Customer Portal (mirrors TC-007 + portal-specific validations)
+  - **TC-010**: Complete API Documentation Display in Customer Portal (mirrors TC-008 + performance metrics)
+- **Architecture**: Dedicated `CustomerPortalPage` class with specialized locators and validation methods
+- **Features**:
+  - Published API documentation validation (requires API publishing)
+  - Broken links validation with smart categorization (excludes legitimate UI elements)
+  - Navigation consistency validation
+  - Performance metrics validation (load time, API docs load time, navigation response time)
+  - Customer portal specific UI patterns recognition
 
 ## 🎯 Key Features
 
 - **✅ Modern Architecture**: Factory Pattern for extensible API parsing (YAML, JSON, future formats)
 - **✅ SOLID Principles**: Clean code architecture with proper separation of concerns
-- **✅ Consolidated Tests**: Optimized from 69 to 12 test cases without losing coverage
+- **✅ Consolidated Tests**: Optimized from 69 to 10 test cases without losing coverage
 - **✅ Data-Driven Testing**: Parameterized tests with centralized configuration
 - **✅ Visual Validation**: Screenshots for every test case with validation
 - **✅ Real UI Locators**: Based on actual Document360 interface with strict mode compliance
@@ -114,6 +124,8 @@ npm run test:report     # View HTML report
 - **✅ Performance Testing**: Load times and responsiveness validation
 - **✅ Error Handling**: Robust error handling for all scenarios
 - **✅ Multiple Reports**: HTML, JSON, JUnit, and Markdown reports
+- **✅ Smart Link Validation**: Intelligent broken link detection that excludes legitimate UI elements (role="button", cursor:auto, aria-label patterns)
+- **✅ Customer Portal Support**: Dedicated page class with specialized locators for published API documentation
 
 ## 🔧 Available Scripts
 
@@ -122,7 +134,7 @@ npm run test:report     # View HTML report
 npm run test                      # Run all tests
 npm run test:category1            # Import functionality tests (6 tests)
 npm run test:category2            # UI content validation tests (2 consolidated tests)
-npm run test:category3            # Customer portal tests (4 tests)
+npm run test:category3            # Customer portal tests (2 mirrored tests)
 
 # Debug and development
 npm run test:debug                # Run tests in debug mode
@@ -163,6 +175,7 @@ Every test case captures relevant screenshots for visual verification:
 
 ### **Core Components**
 - **ApiDocPage**: Main page object with 968 lines, 50+ locators, and comprehensive validation methods
+- **CustomerPortalPage**: Dedicated customer portal page object with specialized locators and validation methods
 - **ApiSpecParserFactory**: Factory for creating YAML, JSON, and future format parsers
 - **Header & NewApiCreationModal**: Reusable UI components
 - **UIActions**: Base class with common UI interaction methods
@@ -186,7 +199,7 @@ Every test case captures relevant screenshots for visual verification:
 
 ## 🎉 Success Criteria
 
-- **✅ All 12 optimized test cases execute successfully**
+- **✅ All 10 optimized test cases execute successfully**
 - **✅ Complete API documentation validation (consolidated from 69 test cases)**
 - **✅ Factory Pattern implementation for extensible format support**
 - **✅ SOLID principles compliance with clean architecture**
@@ -201,7 +214,8 @@ Every test case captures relevant screenshots for visual verification:
 1. **Login Timeout**: Check `TEST_URL` and credentials
 2. **Element Not Found**: Verify locators match actual UI
 3. **Import Failure**: Check test data file paths
-4. **Portal Access**: Verify `CUSTOMER_PORTAL_URL`
+4. **Customer Portal Access**: Verify `CUSTOMER_PORTAL_URL` and ensure API is published
+5. **Broken Links False Positives**: The framework now intelligently excludes legitimate UI elements (buttons, navigation elements) from broken link detection
 
 ### **Debug Mode**
 ```bash
@@ -224,9 +238,9 @@ This framework is **production-ready** with modern architecture and provides com
 
 ### **Key Achievements**
 - **🏭 Factory Pattern**: Extensible API specification parsing
-- **🎯 Optimized Tests**: 12 comprehensive tests (consolidated from 69)
+- **🎯 Optimized Tests**: 10 comprehensive tests (consolidated from 69)
 - **🔧 SOLID Architecture**: Clean, maintainable, and scalable codebase
 - **📊 Complete Coverage**: All API documentation elements validated
 - **🚀 Auto-Cleanup**: Intelligent resource management
 
-**Total: 12 Optimized Test Cases** covering the complete API documentation workflow with modern design patterns! 🎯
+**Total: 10 Optimized Test Cases** covering the complete API documentation workflow with modern design patterns! 🎯
