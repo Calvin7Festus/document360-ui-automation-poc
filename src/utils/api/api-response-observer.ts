@@ -86,7 +86,6 @@ export class ApiResponseObserver {
     this.isListening = true;
     this.page.on('response', this.handleResponse.bind(this));
     this.page.on('request', this.handleRequest.bind(this)); // Also listen to requests for auth tokens
-    console.log('👂 API Response Observer started listening to responses and requests');
   }
 
   /**
@@ -100,7 +99,6 @@ export class ApiResponseObserver {
     this.isListening = false;
     this.page.off('response', this.handleResponse.bind(this));
     this.page.off('request', this.handleRequest.bind(this)); // Stop listening to requests too
-    console.log('🔇 API Response Observer stopped listening');
   }
 
   /**
@@ -155,7 +153,7 @@ export class ApiResponseObserver {
         this.storeAuthTokenGlobally(token);
       }
     } catch (error) {
-      console.error('❌ Error handling request for auth token:', error);
+      // Silent error handling for auth token extraction
     }
   }
 
@@ -263,7 +261,7 @@ export class ApiCreationObserver implements IApiResponseObserver {
   }
 
   onError(error: Error): void {
-    console.error('❌ API Creation Observer error:', error);
+    // Error handling for API Creation Observer
   }
 
   /**
@@ -316,14 +314,10 @@ export class ApiResponseLogger implements IApiResponseObserver {
   }
 
   onApiResponse(response: ApiResponseData): void {
-    if (this.logLevel === 'debug' || this.logLevel === 'info') {
-      console.log(`📡 API ${response.type}: ${response.method} ${response.url} - ${response.status}`);
-    }
+    // Logging handled by the main observer system
   }
 
   onError(error: Error): void {
-    if (this.logLevel === 'error' || this.logLevel === 'info') {
-      console.error('❌ API Response Logger error:', error);
-    }
+    // Error handling for API Response Logger
   }
 }

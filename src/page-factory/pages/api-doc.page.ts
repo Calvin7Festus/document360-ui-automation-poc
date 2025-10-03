@@ -106,9 +106,8 @@ export class ApiDocPage extends UIActions {
         await this.toastMessage.waitForSuccessToast();
         await expect(this.toastMessage.successToast).toBeVisible();
         
-        // Get and log the toast message for debugging
+        // Get the toast message for verification
         const toastText = await this.toastMessage.getToastText();
-        console.log(`✅ API documentation published successfully. Toast message: "${toastText}"`);
     }
 
     // Helper methods for category folder navigation (used in comprehensive validation)
@@ -252,7 +251,6 @@ export class ApiDocPage extends UIActions {
         if (await methodBadge.isVisible()) {
             const badgeText = await methodBadge.textContent();
             const badgeColor = await methodBadge.evaluate((el: HTMLElement) => getComputedStyle(el).backgroundColor);
-            console.log(`✅ Method badge: ${badgeText} (${badgeColor})`);
             return true;
         }
         return false;
@@ -263,14 +261,11 @@ export class ApiDocPage extends UIActions {
         if (await pathElement.isVisible()) {
             const displayedPath = await pathElement.textContent();
             if (displayedPath && displayedPath.includes(expectedPath)) {
-                console.log(`✅ Path displayed and matches: ${expectedPath}`);
                 return true;
             } else {
-                console.log(`⚠️ Path element visible but content mismatch. Expected: ${expectedPath}, Found: ${displayedPath}`);
                 return false;
             }
         } else {
-            console.log(`⚠️ Path element not visible for: ${expectedPath}`);
             return false;
         }
     }
@@ -280,14 +275,11 @@ export class ApiDocPage extends UIActions {
         if (await descElement.isVisible()) {
             const displayedDescription = await descElement.textContent();
             if (displayedDescription && displayedDescription.includes(expectedDescription)) {
-                console.log(`✅ Description displayed and matches: ${expectedDescription}`);
                 return true;
             } else {
-                console.log(`⚠️ Description element visible but content mismatch. Expected: ${expectedDescription}, Found: ${displayedDescription}`);
                 return false;
             }
         } else {
-            console.log(`⚠️ Description element not visible for: ${expectedDescription}`);
             return false;
         }
     }
@@ -295,7 +287,6 @@ export class ApiDocPage extends UIActions {
     async validateSecuritySection(apiSpecParser: any, endpoint: any, method: string): Promise<boolean> {
         const securitySection = this.getSecuritySection();
         if (await securitySection.isVisible()) {
-            console.log(`✅ Security section visible`);
             
             const endpointSecurity = apiSpecParser.getEndpointSecurity(endpoint.path, method);
             const securitySchemes = apiSpecParser.getSecuritySchemes();
@@ -304,7 +295,6 @@ export class ApiDocPage extends UIActions {
                 // Get all security containers on the page
                 const securityContainers = this.getAllSecurityContainers();
                 const containerCount = await securityContainers.count();
-                console.log(`Found ${containerCount} security scheme(s) in UI`);
                 
                 // Validate each security requirement
                 for (const securityReq of endpointSecurity) {
@@ -318,13 +308,11 @@ export class ApiDocPage extends UIActions {
             }
             return true;
         } else {
-            console.log(`ℹ️ Security section not visible for ${endpoint.path} ${method}`);
             return false;
         }
     }
 
     private async validateSecurityScheme(schemeName: string, schemeInfo: any, scopes: any): Promise<void> {
-        console.log(`  Validating security scheme: ${schemeName} (${schemeInfo.type})`);
         
         if (schemeInfo.type === 'oauth2') {
             await this.validateOAuthSecurity(schemeName, schemeInfo, scopes);
@@ -340,7 +328,6 @@ export class ApiDocPage extends UIActions {
         const oauthType = this.getOAuthSecurityType();
         if (await oauthType.isVisible()) {
             const displayedType = await oauthType.textContent();
-            console.log(`    ✅ OAuth security type displayed: ${displayedType}`);
         }
         
         // Validate OAuth flow
@@ -349,7 +336,6 @@ export class ApiDocPage extends UIActions {
         if (await oauthFlowTitle.isVisible() && await oauthFlowValue.isVisible()) {
             const flowTitle = await oauthFlowTitle.textContent();
             const flowValue = await oauthFlowValue.textContent();
-            console.log(`    ✅ OAuth flow displayed: ${flowTitle} - ${flowValue}`);
         }
         
         // Validate Authorization URL
@@ -358,7 +344,6 @@ export class ApiDocPage extends UIActions {
         if (await authUrlTitle.isVisible() && await authUrl.isVisible()) {
             const urlTitle = await authUrlTitle.textContent();
             const urlValue = await authUrl.textContent();
-            console.log(`    ✅ Authorization URL displayed: ${urlTitle} - ${urlValue}`);
         }
         
         // Validate Scopes
@@ -372,7 +357,6 @@ export class ApiDocPage extends UIActions {
         const apiKeyType = this.getApiKeySecurityType();
         if (await apiKeyType.isVisible()) {
             const displayedType = await apiKeyType.textContent();
-            console.log(`    ✅ API Key security type displayed: ${displayedType}`);
         }
         
         // Validate API Key location (header/query)
@@ -380,9 +364,7 @@ export class ApiDocPage extends UIActions {
         if (await apiKeyLocation.isVisible()) {
             const displayedLocation = await apiKeyLocation.textContent();
             if (displayedLocation && displayedLocation.includes(schemeInfo.in)) {
-                console.log(`    ✅ API Key location matches: ${schemeInfo.in}`);
             } else {
-                console.log(`    ⚠️ API Key location mismatch. Expected: ${schemeInfo.in}, Found: ${displayedLocation}`);
             }
         }
         
@@ -391,9 +373,7 @@ export class ApiDocPage extends UIActions {
         if (await apiKeyName.isVisible()) {
             const displayedName = await apiKeyName.textContent();
             if (displayedName && displayedName.includes(schemeInfo.name)) {
-                console.log(`    ✅ API Key name matches: ${schemeInfo.name}`);
             } else {
-                console.log(`    ⚠️ API Key name mismatch. Expected: ${schemeInfo.name}, Found: ${displayedName}`);
             }
         }
         
@@ -403,16 +383,13 @@ export class ApiDocPage extends UIActions {
             if (await apiKeyDesc.isVisible()) {
                 const displayedDesc = await apiKeyDesc.textContent();
                 if (displayedDesc && displayedDesc.includes(schemeInfo.description)) {
-                    console.log(`    ✅ API Key description matches: ${schemeInfo.description}`);
                 } else {
-                    console.log(`    ⚠️ API Key description mismatch. Expected: ${schemeInfo.description}, Found: ${displayedDesc}`);
                 }
             }
         }
     }
 
     private async validateHttpSecurity(schemeName: string, schemeInfo: any): Promise<void> {
-        console.log(`    ℹ️ HTTP security scheme validation not yet implemented for: ${schemeName} (${schemeInfo.scheme})`);
     }
 
     async validateParametersSection(apiSpecParser: any, endpoint: any, method: string): Promise<boolean> {
@@ -420,7 +397,6 @@ export class ApiDocPage extends UIActions {
         if (parameters.length > 0) {
             const paramSection = this.getParametersSection();
             if (await paramSection.isVisible()) {
-                console.log(`✅ Parameters section visible (${parameters.length} params)`);
                 
                 for (const param of parameters) {
                     await this.validateSingleParameter(param);
@@ -428,7 +404,6 @@ export class ApiDocPage extends UIActions {
                 return true;
             }
         } else {
-            console.log(`ℹ️ No parameters found for ${endpoint.path} ${method}`);
         }
         return false;
     }
@@ -439,7 +414,6 @@ export class ApiDocPage extends UIActions {
         if (responseKeys.length > 0) {
             const responsesSection = this.getResponsesSection();
             if (await responsesSection.isVisible()) {
-                console.log(`✅ Responses section visible`);
                 
                 for (const responseCode of responseKeys.slice(0, 2)) { // Check first 2 responses
                     await this.validateSingleResponse(apiSpecParser, endpoint, method, responseCode);
@@ -447,7 +421,6 @@ export class ApiDocPage extends UIActions {
                 return true;
             }
         } else {
-            console.log(`ℹ️ No responses found for ${endpoint.path} ${method}`);
         }
         return false;
     }
@@ -456,7 +429,6 @@ export class ApiDocPage extends UIActions {
      * Validate complete introduction section - comprehensive introduction validation
      */
     async validateCompleteIntroductionSection(testData: any): Promise<void> {
-        console.log(`Validating complete introduction section`);
         
         // Navigate to introduction section
         await this.clickOnIntroduction();
@@ -490,18 +462,15 @@ export class ApiDocPage extends UIActions {
         
         // Take final screenshot
         await this.takeValidationScreenshot('complete-introduction-validation');
-        console.log(`✅ Complete introduction section validation completed`);
     }
 
     /**
      * Validate complete API documentation display - comprehensive endpoint validation
      */
     async validateCompleteApiDocumentation(apiSpecParser: any, testData: any, page: any): Promise<void> {
-        console.log(`${testData.endpoints.length} endpoints found for validation`);
         
         // Extract categories from endpoint paths
         const categories = [...new Set(testData.endpointPaths.map((path: string) => path.split('/')[1]).filter(Boolean))];
-        console.log(`📁 Found categories: ${categories.join(', ')}`);
         
         // Validate each category and its operations
         for (const category of categories) {
@@ -510,143 +479,108 @@ export class ApiDocPage extends UIActions {
         
         // Take final screenshot
         await this.takeValidationScreenshot('complete-api-documentation');
-        console.log(`✅ Complete API documentation validation completed`);
     }
 
     // Private helper methods for comprehensive validation
 
     private async validateApiTitle(apiTitle: string): Promise<void> {
-        console.log(`🔍 Validating API Title: ${apiTitle}`);
         await expect(this.getApiTitle(apiTitle)).toBeVisible();
-        console.log(`✅ API Title validated: ${apiTitle}`);
     }
 
     private async validateApiVersion(apiVersion: string): Promise<void> {
-        console.log(`🔍 Validating API Version: ${apiVersion}`);
         await expect(this.apiVersion(apiVersion)).toBeVisible();
-        console.log(`✅ API Version validated: ${apiVersion}`);
     }
 
     private async validateApiDescription(apiDescription?: string): Promise<void> {
         if (apiDescription) {
-            console.log(`🔍 Validating API Description: ${apiDescription}`);
             await expect(this.apiDescription(apiDescription)).toBeVisible();
-            console.log(`✅ API Description validated`);
         } else {
-            console.log(`ℹ️ No API description found in test data, skipping validation`);
         }
     }
 
     private async validateTermsOfService(termsOfService?: string): Promise<void> {
         if (termsOfService) {
-            console.log(`🔍 Validating Terms of Service: ${termsOfService}`);
             await expect(this.termsOfService).toBeVisible();
             await expect(this.termsOfService).toHaveAttribute('href', termsOfService);
-            console.log(`✅ Terms of Service validated: ${termsOfService}`);
         } else {
-            console.log(`ℹ️ No terms of service found in test data, skipping validation`);
         }
     }
 
     private async validateExternalDocumentation(externalDocsUrl?: string): Promise<void> {
         if (externalDocsUrl) {
-            console.log(`🔍 Validating external documentation: ${externalDocsUrl}`);
             await expect(this.externalDocs).toBeVisible();
             await expect(this.externalDocs).toHaveAttribute('href', externalDocsUrl);
-            console.log(`✅ External Documentation validated`);
         } else {
-            console.log(`ℹ️ No external documentation found in test data, skipping validation`);
         }
     }
 
     private async validateContactInformation(contactInfo?: any): Promise<void> {
         if (contactInfo?.name) {
-            console.log(`🔍 Validating Contact Name: ${contactInfo.name}`);
             await expect(this.contactName).toBeVisible();
             await expect(this.contactName).toContainText(contactInfo.name);
-            console.log(`✅ Contact Name validated: ${contactInfo.name}`);
         }
         
         if (contactInfo?.email) {
-            console.log(`🔍 Validating Contact Email: ${contactInfo.email}`);
             await expect(this.contactEmail).toBeVisible();
             await expect(this.contactEmail).toContainText(contactInfo.email);
             await expect(this.contactEmail).toHaveAttribute('href', `mailto: ${contactInfo.email}`);
-            console.log(`✅ Contact Email validated: ${contactInfo.email}`);
         }
         
         if (contactInfo?.url) {
-            console.log(`🔍 Validating Contact URL: ${contactInfo.url}`);
             await expect(this.contactUrl).toBeVisible();
             await expect(this.contactUrl).toContainText(contactInfo.url);
             await expect(this.contactUrl).toHaveAttribute('href', contactInfo.url);
-            console.log(`✅ Contact URL validated: ${contactInfo.url}`);
         }
     }
 
     private async validateLicenseInformation(licenseInfo?: any): Promise<void> {
         if (licenseInfo?.name) {
-            console.log(`🔍 Validating License Name: ${licenseInfo.name}`);
             await expect(this.liscenseName).toBeVisible();
             await expect(this.liscenseName).toContainText(licenseInfo.name);
-            console.log(`✅ License Name validated: ${licenseInfo.name}`);
         }
         
         if (licenseInfo?.url) {
-            console.log(`🔍 Validating License URL: ${licenseInfo.url}`);
             await expect(this.liscenseUrl).toBeVisible();
             await expect(this.liscenseUrl).toContainText(licenseInfo.url);
             await expect(this.liscenseUrl).toHaveAttribute('href', licenseInfo.url);
-            console.log(`✅ License URL validated: ${licenseInfo.url}`);
         }
     }
 
     private async validateServerInformation(servers: any[]): Promise<void> {
         if (servers.length > 0) {
-            console.log(`🔍 Validating ${servers.length} server(s)`);
             
             const maxServers = Math.min(servers.length, 3); // Limit to 3 servers for performance
             for (let i = 0; i < maxServers; i++) {
                 const server = servers[i];
                 
                 // Validate server URL
-                console.log(`  🔍 Validating server URL: "${server.url}"`);
                 await expect(this.serverUrl(i)).toBeVisible();
                 await expect(this.serverUrl(i)).toContainText(server.url);
-                console.log(`  ✅ Server URL validated: "${server.url}"`);
                 
                 // Validate server description if present
                 if (server.description) {
-                    console.log(`  🔍 Validating server description: "${server.description}"`);
                     await expect(this.serverDescription(i)).toBeVisible();
                     await expect(this.serverDescription(i)).toContainText(server.description);
-                    console.log(`  ✅ Server description validated: "${server.description}"`);
                 }
             }
         } else {
-            console.log(`ℹ️ No servers found in test data, skipping validation`);
         }
     }
 
     private async validateServerVariables(servers: any[]): Promise<void> {
         const serversWithVariables = servers.filter(server => server.variables && Object.keys(server.variables).length > 0);
         if (serversWithVariables.length > 0) {
-            console.log(`🔍 Validating server variables for ${serversWithVariables.length} server(s)`);
             
             if (await this.serverVariablesSection.isVisible()) {
                 await expect(this.serverVariablesSection).toBeVisible();
-                console.log(`  ✅ Server variables section is visible`);
             } else {
-                console.log(`  ℹ️ Server variables section not visible in UI`);
             }
         } else {
-            console.log(`ℹ️ No server variables found in test data, skipping validation`);
         }
     }
 
     private async validateCategoryOperations(category: string, testData: any, apiSpecParser: any, page: any): Promise<void> {
         if (await this.isCategoryFolderVisible(category)) {
-            console.log(`✅ Found category: "${category}"`);
             await this.expandCategoryFolder(category);
             
             // Get operations for this category
@@ -661,7 +595,6 @@ export class ApiDocPage extends UIActions {
                 }
             }
         } else {
-            console.log(`⚠️ Category not found: "${category}"`);
         }
     }
 
@@ -669,11 +602,9 @@ export class ApiDocPage extends UIActions {
         const summary = apiSpecParser.getEndpointSummary(endpoint.path, method);
         if (!summary) return;
         
-        console.log(`🔍 Validating: ${summary}`);
         
         // 1. Validate operation visibility
         if (await this.validateOperationInCategory(summary)) {
-            console.log(`✅ Operation visible: ${summary}`);
             
             // 2. Validate HTTP method badge and color
             await this.validateHttpMethodBadge(summary);
@@ -684,7 +615,6 @@ export class ApiDocPage extends UIActions {
             // 4. Validate operation content
             await this.validateOperationContent(endpoint, method, apiSpecParser);
         } else {
-            console.log(`⚠️ Operation not visible: ${summary}`);
         }
     }
 
@@ -703,7 +633,6 @@ export class ApiDocPage extends UIActions {
         if (description) {
             await this.validateEndpointDescriptionContent(description);
         } else {
-            console.log(`ℹ️ No description found in API spec for ${endpoint.path} ${method}`);
         }
         
         // Validate security section
@@ -720,7 +649,6 @@ export class ApiDocPage extends UIActions {
         const scopesTitle = this.getScopesTitle();
         if (await scopesTitle.isVisible()) {
             const scopesTitleText = await scopesTitle.textContent();
-            console.log(`    ✅ Scopes section displayed: ${scopesTitleText}`);
             
             for (const scope of scopes) {
                 const scopeValue = this.getScopeValue(scope);
@@ -728,11 +656,9 @@ export class ApiDocPage extends UIActions {
                 
                 if (await scopeValue.isVisible()) {
                     const scopeText = await scopeValue.textContent();
-                    console.log(`      ✅ Scope value displayed: ${scopeText}`);
                     
                     if (await scopeDesc.isVisible()) {
                         const descText = await scopeDesc.textContent();
-                        console.log(`      ✅ Scope description displayed: ${descText}`);
                     }
                 }
             }
@@ -741,19 +667,15 @@ export class ApiDocPage extends UIActions {
 
     private async validateSingleParameter(param: any): Promise<void> {
         const paramName = param.name;
-        console.log(`  Validating parameter: ${paramName}`);
         
         // Validate parameter name
         const paramNameElement = this.parameterName('', '', paramName);
         if (await paramNameElement.isVisible()) {
             const displayedName = await paramNameElement.textContent();
             if (displayedName === paramName) {
-                console.log(`    ✅ Parameter name matches: ${paramName}`);
             } else {
-                console.log(`    ⚠️ Parameter name mismatch. Expected: ${paramName}, Found: ${displayedName}`);
             }
         } else {
-            console.log(`    ⚠️ Parameter name not visible: ${paramName}`);
         }
         
         // Validate parameter type
@@ -763,9 +685,7 @@ export class ApiDocPage extends UIActions {
             const expectedType = param.schema?.type || 'unknown';
             
             if (displayedType && displayedType.includes(expectedType)) {
-                console.log(`    ✅ Parameter type displayed: ${displayedType}`);
             } else {
-                console.log(`    ⚠️ Parameter type mismatch. Expected: ${expectedType}, Found: ${displayedType}`);
             }
         }
         
@@ -775,22 +695,17 @@ export class ApiDocPage extends UIActions {
             if (await paramDescElement.isVisible()) {
                 const displayedDesc = await paramDescElement.textContent();
                 if (displayedDesc && displayedDesc.includes(param.description)) {
-                    console.log(`    ✅ Parameter description matches: ${param.description}`);
                 } else {
-                    console.log(`    ⚠️ Parameter description mismatch. Expected: ${param.description}, Found: ${displayedDesc}`);
                 }
             } else {
-                console.log(`    ⚠️ Parameter description not visible for: ${paramName}`);
             }
         }
     }
 
     private async validateSingleResponse(apiSpecParser: any, endpoint: any, method: string, responseCode: string): Promise<void> {
-        console.log(`  Validating response: ${responseCode}`);
         
         const responseElement = this.responseCode(endpoint.path, method, responseCode);
         if (await responseElement.isVisible()) {
-            console.log(`    ✅ Response ${responseCode} visible`);
             
             // Validate response description
             const responseDesc = apiSpecParser.getResponseDescription(endpoint.path, method, responseCode);
@@ -799,7 +714,6 @@ export class ApiDocPage extends UIActions {
                 if (await descElement.isVisible()) {
                     const displayedDesc = await descElement.textContent();
                     if (displayedDesc && displayedDesc.includes(responseDesc)) {
-                        console.log(`    ✅ Response description matches: ${responseDesc}`);
                     }
                 }
             }
@@ -810,7 +724,6 @@ export class ApiDocPage extends UIActions {
             if (headerNames.length > 0) {
                 const headersContainer = this.getResponseHeaders(responseCode);
                 if (await headersContainer.isVisible()) {
-                    console.log(`    ✅ Response headers container visible (${headerNames.length} headers)`);
                 }
             }
             
@@ -819,19 +732,16 @@ export class ApiDocPage extends UIActions {
             if (mediaTypes.length > 0) {
                 const schemaContainer = this.getResponseSchemaContainer(responseCode);
                 if (await schemaContainer.isVisible()) {
-                    console.log(`    ✅ Response schema container visible`);
                     
                     const defaultMediaType = mediaTypes.includes('application/json') ? 'application/json' : mediaTypes[0];
                     const responseSchema = apiSpecParser.getResponseSchema(endpoint.path, method, responseCode, defaultMediaType);
                     
                     if (responseSchema.type === 'array' && responseSchema.items?.properties) {
                         const properties = Object.keys(responseSchema.items.properties);
-                        console.log(`    Validating ${properties.length} schema properties`);
                         
                         for (const propName of properties.slice(0, 3)) {
                             const propElement = this.getResponseSchemaProperty(responseCode, propName);
                             if (await propElement.isVisible()) {
-                                console.log(`      ✅ Schema property visible: ${propName}`);
                             }
                         }
                     }

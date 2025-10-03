@@ -116,7 +116,7 @@ export class TestSetupManager {
     try {
       await this.cleanupApiDefinitions();
     } catch (error) {
-      console.warn(`${TEST_CONFIG.LOG_PREFIXES.WARNING} Failed to cleanup API definitions:`, error);
+      loggers.setup.warn(`${TEST_CONFIG.LOG_PREFIXES.WARNING} Failed to cleanup API definitions:`, error);
     }
     
     await this.resetNavigation();
@@ -167,8 +167,8 @@ export class TestSetupManager {
     
     // Log file usage if verbose logging is enabled
     if (TEST_CONFIG.ENABLE_VERBOSE_LOGGING) {
-      console.log(TEST_MESSAGES.SETUP.FILE_USAGE(TEST_DATA_CONFIG.apiSpecFile));
-      console.log(`📖 File Info: ${currentFileInfo.description}`);
+      loggers.setup.info(TEST_MESSAGES.SETUP.FILE_USAGE(TEST_DATA_CONFIG.apiSpecFile));
+      loggers.setup.info(`📖 File Info: ${currentFileInfo.description}`);
     }
     
     // Parse API specification using Factory pattern

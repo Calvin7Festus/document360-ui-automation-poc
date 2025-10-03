@@ -217,12 +217,12 @@ export class ApiHelper {
    * Handle delete response
    */
   private async handleDeleteResponse(response: any, count: number): Promise<boolean> {
-    console.log(`📡 Delete API response status: ${response.status()}`);
+    loggers.api.debug(`📡 Delete API response status: ${response.status()}`);
     
     if (response.ok()) {
       const responseText = await response.text();
-      console.log(`📋 Delete API response: ${responseText}`);
-      console.log(`✅ Successfully deleted ${count} API definition(s)`);
+      loggers.api.debug(`📋 Delete API response: ${responseText}`);
+      loggers.api.info(`✅ Successfully deleted ${count} API definition(s)`);
       
       // Clear tracking data
       this.creationObserver.clearTracked();
@@ -233,7 +233,7 @@ export class ApiHelper {
       return true;
     } else {
       const errorText = await response.text();
-      console.error(`❌ Failed to delete API definitions: ${response.status()} - ${errorText}`);
+      loggers.api.error(`❌ Failed to delete API definitions: ${response.status()} - ${errorText}`);
       return false;
     }
   }
@@ -338,7 +338,7 @@ export class ApiHelper {
 
       return authCookie?.value || '';
     } catch (error) {
-      console.error(`❌ Error extracting auth token from browser:`, error);
+      loggers.api.error(`❌ Error extracting auth token from browser:`, error);
       return '';
     }
   }

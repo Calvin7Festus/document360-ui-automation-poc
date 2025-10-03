@@ -321,7 +321,6 @@ export class TestDataProvider {
   private async validateTestDataFile(testData: TestDataFile): Promise<boolean> {
     try {
       if (!this.fileExists(testData.file)) {
-        console.warn(`⚠️ Test data file not found: ${testData.file}`);
         return false;
       }
 
@@ -329,7 +328,6 @@ export class TestDataProvider {
       // e.g., parse the file and verify title/version match
       return true;
     } catch (error) {
-      console.warn(`⚠️ Error validating test data file ${testData.file}:`, error);
       return false;
     }
   }

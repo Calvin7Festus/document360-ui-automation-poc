@@ -279,8 +279,6 @@ export class CustomerPortalPage extends UIActions {
     }
 
     async expandCategory(categoryName: string): Promise<void> {
-        console.log(`🔍 Expanding category: ${categoryName}`);
-        
         // Find the category node with the specific name
         const categoryLink = this.page.locator(`a.data-title[aria-label="${categoryName}"]`);
         if (await categoryLink.isVisible()) {
@@ -291,12 +289,7 @@ export class CustomerPortalPage extends UIActions {
             if (await expandArrow.isVisible()) {
                 await expandArrow.click();
                 await this.page.waitForTimeout(1000); // Wait for expansion
-                console.log(`✅ Expanded category: ${categoryName}`);
-            } else {
-                console.log(`ℹ️ Category ${categoryName} already expanded or no arrow found`);
             }
-        } else {
-            console.log(`⚠️ Category ${categoryName} not found`);
         }
     }
 
@@ -312,8 +305,6 @@ export class CustomerPortalPage extends UIActions {
 
     // Validation methods - same validation logic as Category 2 but for customer portal
     async validateCompleteIntroductionSection(testData: any): Promise<void> {
-        console.log('🔍 Validating complete introduction section in customer portal');
-        
         // Navigate to introduction section
         await this.clickOnIntroduction();
         
@@ -337,18 +328,14 @@ export class CustomerPortalPage extends UIActions {
         
         // Take screenshot for validation
         await this.takeValidationScreenshot('customer-portal-introduction-validation');
-        console.log('✅ Customer portal introduction section validation completed');
     }
 
     async validateCompleteApiDocumentation(apiSpecParser: any, testData: any, page: Page): Promise<void> {
-        console.log(`🔍 Validating complete API documentation in customer portal (${testData.endpoints.length} endpoints)`);
-        
         // Wait for API documentation section to be visible
         await this.apiDocumentationSection.waitFor({ state: 'visible' });
         
         // Extract categories from endpoint paths
         const categories = [...new Set(testData.endpointPaths.map((path: string) => path.split('/')[1]).filter(Boolean))];
-        console.log(`📁 Found categories in customer portal: ${categories.join(', ')}`);
         
         // Validate each category and its operations
         for (const category of categories) {
@@ -357,13 +344,10 @@ export class CustomerPortalPage extends UIActions {
         
         // Take screenshot for validation
         await this.takeValidationScreenshot('customer-portal-api-documentation');
-        console.log('✅ Customer portal API documentation validation completed');
     }
 
     // Performance validation methods
     async validateCustomerPortalPerformance(customerPortalUrl: string): Promise<{ loadTime: number; apiDocLoadTime: number; navResponseTime: number }> {
-        console.log('🔍 Validating customer portal performance');
-        
         // Step 1: Measure page load time
         const startTime = Date.now();
         await this.navigateToCustomerPortal(customerPortalUrl);
@@ -380,27 +364,15 @@ export class CustomerPortalPage extends UIActions {
         await this.contactName.waitFor({ state: 'visible' });
         const navResponseTime = Date.now() - navStartTime;
         
-        console.log(`📊 Performance metrics:`);
-        console.log(`  - Page load time: ${loadTime}ms`);
-        console.log(`  - API documentation load time: ${apiDocLoadTime}ms`);
-        console.log(`  - Navigation response time: ${navResponseTime}ms`);
-        
         return { loadTime, apiDocLoadTime, navResponseTime };
     }
 
     // Cross-format consistency validation
     async validateCrossFormatConsistency(yamlContent: any, jsonContent: any): Promise<boolean> {
-        console.log('🔍 Validating cross-format consistency in customer portal');
-        
         // Compare title, version, and description
         const titleMatch = yamlContent.title === jsonContent.title;
         const versionMatch = yamlContent.version === jsonContent.version;
         const descriptionMatch = yamlContent.description === jsonContent.description;
-        
-        console.log(`📊 Cross-format consistency:`);
-        console.log(`  - Title match: ${titleMatch ? '✅' : '❌'}`);
-        console.log(`  - Version match: ${versionMatch ? '✅' : '❌'}`);
-        console.log(`  - Description match: ${descriptionMatch ? '✅' : '❌'}`);
         
         return titleMatch && versionMatch && descriptionMatch;
     }
@@ -414,8 +386,6 @@ export class CustomerPortalPage extends UIActions {
     }
 
     async analyzeLinkQuality(): Promise<number> {
-        console.log(`🔍 Starting comprehensive link analysis...`);
-        
         // Check for different types of potentially broken links
         const emptyHrefLinks = this.page.locator('a[href=""]');
         const hashOnlyLinks = this.page.locator('a[href="#"]');
@@ -437,86 +407,18 @@ export class CustomerPortalPage extends UIActions {
         const voidCount = await javascriptVoidLinks.count();
         const noHrefCount = await noHrefLinks.count();
         
-        console.log(`🔍 Comprehensive link analysis:`);
-        console.log(`  - Empty href links (""): ${emptyCount} total`);
-        console.log(`    ├─ Display/header/button links (legitimate): ${emptyDisplayCount}`);
-        console.log(`    └─ Potentially broken clickable links: ${emptyClickableCount}`);
-        console.log(`  - Hash-only links (#): ${hashCount}`);
-        console.log(`  - Undefined links: ${undefinedCount}`);
-        console.log(`  - Null links: ${nullCount}`);
-        console.log(`  - JavaScript void links: ${voidCount}`);
-        console.log(`  - Links without href attribute: ${noHrefCount}`);
-        
         // Only count truly broken links:
         // - Empty href links that are meant to be clickable (not display elements)
         // - Undefined links
         // Excludes: hash-only, null, void, display elements with empty href
         const actuallyBrokenCount = emptyClickableCount + undefinedCount;
-        console.log(`🔍 Actually broken links: ${actuallyBrokenCount}`);
         
-        // Log ALL broken links for debugging (not just samples)
-        if (actuallyBrokenCount > 0) {
-            console.log(`🔍 ALL broken links found:`);
-            
-            if (emptyClickableCount > 0) {
-                console.log(`  📝 Empty href clickable links (${emptyClickableCount}):`);
-                for (let i = 0; i < emptyClickableCount; i++) {
-                    try {
-                        const linkElement = emptyHrefClickableLinks.nth(i);
-                        const innerHTML = await linkElement.innerHTML();
-                        const outerHTML = await linkElement.evaluate(el => el.outerHTML.substring(0, 300));
-                        const parentContext = await linkElement.evaluate(el => {
-                            const parent = el.parentElement;
-                            return parent ? `${parent.tagName}.${parent.className}` : 'no-parent';
-                        });
-                        console.log(`    [${i + 1}] Text: "${innerHTML.trim().substring(0, 50)}" | Parent: ${parentContext}`);
-                        console.log(`         HTML: ${outerHTML}`);
-                    } catch (error) {
-                        console.log(`    [${i + 1}] Could not get details - ${error}`);
-                    }
-                }
-            }
-            
-            if (undefinedCount > 0) {
-                console.log(`  📝 Undefined href links (${undefinedCount}):`);
-                for (let i = 0; i < undefinedCount; i++) {
-                    try {
-                        const linkElement = undefinedLinks.nth(i);
-                        const href = await linkElement.getAttribute('href');
-                        const innerHTML = await linkElement.innerHTML();
-                        const outerHTML = await linkElement.evaluate(el => el.outerHTML.substring(0, 300));
-                        console.log(`    [${i + 1}] Href: "${href}" | Text: "${innerHTML.trim().substring(0, 50)}"`);
-                        console.log(`         HTML: ${outerHTML}`);
-                    } catch (error) {
-                        console.log(`    [${i + 1}] Could not get details - ${error}`);
-                    }
-                }
-            }
-        }
-        
-        // Also log info about "acceptable" links for context
-        if (hashCount > 0) {
-            console.log(`ℹ️ Note: ${hashCount} hash-only links found - these are often legitimate for UI interactions`);
-        }
-        if (voidCount > 0) {
-            console.log(`ℹ️ Note: ${voidCount} JavaScript void links found - these are often legitimate for button actions`);
-        }
-        if (noHrefCount > 0) {
-            console.log(`ℹ️ Note: ${noHrefCount} links without href attribute found - these might be legitimate if they have click handlers`);
-        }
-        if (nullCount > 0) {
-            console.log(`ℹ️ Note: ${nullCount} null href links found - these are often legitimate styled buttons or click handlers`);
-        }
-        if (emptyDisplayCount > 0) {
-            console.log(`ℹ️ Note: ${emptyDisplayCount} empty href display/button links found - these are legitimate (cursor: auto, aria-label, role="button")`);
-        }
         
         return actuallyBrokenCount;
     }
 
     async validateNoTimeoutErrors(): Promise<number> {
         const timeoutErrorsCount = await this.timeoutErrors.count();
-        console.log(`🔍 Timeout errors found: ${timeoutErrorsCount}`);
         return timeoutErrorsCount;
     }
 
@@ -533,141 +435,111 @@ export class CustomerPortalPage extends UIActions {
             }
         }
         
-        console.log(`🔍 Navigation links in tree view: ${enabledLinks}/${totalLinks} enabled`);
         return { totalLinks, enabledLinks };
     }
 
     // API Endpoint validation methods
     async validateApiEndpointStructure(expectedMethod: string, expectedPath: string): Promise<void> {
-        console.log(`🔍 Validating API endpoint structure: ${expectedMethod} ${expectedPath}`);
-        
         // Validate HTTP method
         await expect(this.apiHttpMethod).toBeVisible();
         const methodText = await this.apiHttpMethod.textContent();
         expect(methodText?.toLowerCase()).toContain(expectedMethod.toLowerCase());
-        console.log(`✅ HTTP method validated: ${methodText}`);
         
         // Validate API URL/path
         await expect(this.apiUrl).toBeVisible();
         const urlText = await this.apiUrl.textContent();
         expect(urlText).toContain(expectedPath);
-        console.log(`✅ API path validated: ${urlText}`);
         
         // Validate endpoint description is present
         if (await this.apiEndpointDescription.isVisible()) {
             const descText = await this.apiEndpointDescription.textContent();
-            console.log(`✅ API endpoint description found: ${descText}`);
         }
     }
 
     async validateApiSecuritySection(): Promise<void> {
-        console.log(`🔍 Validating API security section`);
         
         if (await this.apiSecuritySection.isVisible()) {
-            console.log(`✅ Security section is visible`);
             
             // Check for OAuth security
             if (await this.oauthSecurityType.isVisible()) {
-                console.log(`✅ OAuth security type found`);
                 
                 // Validate OAuth flow
                 if (await this.oauthFlow.isVisible()) {
                     const flowText = await this.oauthFlow.textContent();
-                    console.log(`✅ OAuth flow: ${flowText}`);
                 }
                 
                 // Validate authorization URL
                 if (await this.oauthAuthUrl.isVisible()) {
                     const authUrl = await this.oauthAuthUrl.textContent();
-                    console.log(`✅ OAuth authorization URL: ${authUrl}`);
                 }
                 
                 // Validate scopes
                 const scopeCount = await this.oauthScopes.count();
                 if (scopeCount > 0) {
-                    console.log(`✅ Found ${scopeCount} OAuth scope(s)`);
                     for (let i = 0; i < scopeCount; i++) {
                         const scope = this.oauthScopes.nth(i);
                         const scopeText = await scope.textContent();
-                        console.log(`  - Scope: ${scopeText}`);
                     }
                 }
             }
             
             // Check for API Key security
             if (await this.apiKeySecurityType.isVisible()) {
-                console.log(`✅ API Key security type found`);
                 
                 if (await this.apiKeyName.isVisible()) {
                     const keyName = await this.apiKeyName.textContent();
-                    console.log(`✅ API Key name: ${keyName}`);
                 }
             }
         } else {
-            console.log(`ℹ️ No security section found`);
         }
     }
 
     async validateApiParameters(): Promise<void> {
-        console.log(`🔍 Validating API parameters`);
         
         // Validate query parameters
         if (await this.queryParametersSection.isVisible()) {
-            console.log(`✅ Query parameters section found`);
             const paramCount = await this.queryParametersSection.locator('.api-parameter').count();
-            console.log(`✅ Found ${paramCount} query parameter(s)`);
             
             // Validate each parameter
             for (let i = 0; i < Math.min(paramCount, 3); i++) { // Limit to first 3 for performance
                 const param = this.queryParametersSection.locator('.api-parameter').nth(i);
                 const paramName = await param.locator('.api-parameter-name').textContent();
                 const paramType = await param.locator('.api-parameter-data-type').textContent();
-                console.log(`  - Parameter: ${paramName} (${paramType})`);
             }
         }
         
         // Validate body parameters
         if (await this.bodyParametersSection.isVisible()) {
-            console.log(`✅ Body parameters section found`);
             const bodyParamCount = await this.bodyParametersSection.locator('.api-schema-property').count();
-            console.log(`✅ Found ${bodyParamCount} body parameter(s)`);
         }
     }
 
     async validateApiResponses(): Promise<void> {
-        console.log(`🔍 Validating API responses`);
         
         if (await this.apiResponseSection.isVisible()) {
-            console.log(`✅ Response section found`);
             
             // Validate status codes
             const statusCodeCount = await this.apiStatusCodes.count();
-            console.log(`✅ Found ${statusCodeCount} status code(s)`);
             
             for (let i = 0; i < Math.min(statusCodeCount, 3); i++) { // Limit to first 3
                 const statusCode = this.apiStatusCodes.nth(i);
                 const codeText = await statusCode.textContent();
-                console.log(`  - Status code: ${codeText}`);
             }
             
             // Validate response descriptions
             const responseDescCount = await this.apiResponseDescription.count();
             if (responseDescCount > 0) {
-                console.log(`✅ Found ${responseDescCount} response description(s)`);
             }
             
             // Validate schema properties
             const schemaPropertyCount = await this.apiSchemaProperty.count();
             if (schemaPropertyCount > 0) {
-                console.log(`✅ Found ${schemaPropertyCount} schema property(ies)`);
             }
         } else {
-            console.log(`⚠️ No response section found`);
         }
     }
 
     async validateCompleteApiEndpoint(expectedMethod: string, expectedPath: string): Promise<void> {
-        console.log(`🔍 Validating complete API endpoint: ${expectedMethod} ${expectedPath}`);
         
         // Wait for API endpoint container to be visible
         await this.apiEndpointContainer.waitFor({ state: 'visible' });
@@ -700,100 +572,76 @@ export class CustomerPortalPage extends UIActions {
 
     // Private helper methods - same validation logic adapted for customer portal
     private async validateApiTitle(apiTitle: string): Promise<void> {
-        console.log(`🔍 Validating API Title in customer portal: ${apiTitle}`);
         const titleElement = this.getApiTitleByText(apiTitle);
         await expect(titleElement).toBeVisible();
-        console.log(`✅ API Title validated in customer portal: ${apiTitle}`);
     }
 
     private async validateApiVersion(apiVersion: string): Promise<void> {
-        console.log(`🔍 Validating API Version in customer portal: ${apiVersion}`);
         const versionElement = this.getApiVersionByText(apiVersion);
         await expect(versionElement).toBeVisible();
-        console.log(`✅ API Version validated in customer portal: ${apiVersion}`);
     }
 
     private async validateApiDescription(apiDescription?: string): Promise<void> {
         if (apiDescription) {
-            console.log(`🔍 Validating API Description in customer portal: ${apiDescription}`);
             const descriptionElement = this.getApiDescriptionByText(apiDescription);
             await expect(descriptionElement).toBeVisible();
-            console.log(`✅ API Description validated in customer portal`);
         } else {
-            console.log(`ℹ️ No API description found in test data, skipping validation`);
         }
     }
 
     private async validateContactInformation(contactInfo?: any): Promise<void> {
         if (contactInfo?.name) {
-            console.log(`🔍 Validating Contact Name in customer portal: ${contactInfo.name}`);
             await expect(this.contactName).toBeVisible();
             await expect(this.contactName).toContainText(contactInfo.name);
-            console.log(`✅ Contact Name validated in customer portal: ${contactInfo.name}`);
         }
         
         if (contactInfo?.email) {
-            console.log(`🔍 Validating Contact Email in customer portal: ${contactInfo.email}`);
             await expect(this.contactEmail).toBeVisible();
             await expect(this.contactEmail).toContainText(contactInfo.email);
-            console.log(`✅ Contact Email validated in customer portal: ${contactInfo.email}`);
         }
         
         if (contactInfo?.url) {
-            console.log(`🔍 Validating Contact URL in customer portal: ${contactInfo.url}`);
             await expect(this.contactUrl).toBeVisible();
             await expect(this.contactUrl).toContainText(contactInfo.url);
-            console.log(`✅ Contact URL validated in customer portal: ${contactInfo.url}`);
         }
     }
 
     private async validateLicenseInformation(licenseInfo?: any): Promise<void> {
         if (licenseInfo?.name) {
-            console.log(`🔍 Validating License Name in customer portal: ${licenseInfo.name}`);
             await expect(this.licenseName).toBeVisible();
             await expect(this.licenseName).toContainText(licenseInfo.name);
-            console.log(`✅ License Name validated in customer portal: ${licenseInfo.name}`);
         }
         
         if (licenseInfo?.url) {
-            console.log(`🔍 Validating License URL in customer portal: ${licenseInfo.url}`);
             await expect(this.licenseUrl).toBeVisible();
             await expect(this.licenseUrl).toContainText(licenseInfo.url);
-            console.log(`✅ License URL validated in customer portal: ${licenseInfo.url}`);
         }
     }
 
     private async validateServerInformation(servers: any[]): Promise<void> {
         if (servers && servers.length > 0) {
-            console.log(`🔍 Validating ${servers.length} server(s) in customer portal`);
             
             const maxServers = Math.min(servers.length, 3); // Limit to 3 servers for performance
             for (let i = 0; i < maxServers; i++) {
                 const server = servers[i];
                 
                 // Validate server URL
-                console.log(`  🔍 Validating server URL in customer portal: "${server.url}"`);
                 const serverUrlElement = this.getServerUrl(i);
                 await expect(serverUrlElement).toBeVisible();
                 await expect(serverUrlElement).toContainText(server.url);
-                console.log(`  ✅ Server URL validated in customer portal: "${server.url}"`);
                 
                 // Validate server description if present
                 if (server.description) {
-                    console.log(`  🔍 Validating server description in customer portal: "${server.description}"`);
                     const serverDescElement = this.getServerDescription(i);
                     await expect(serverDescElement).toBeVisible();
                     await expect(serverDescElement).toContainText(server.description);
-                    console.log(`  ✅ Server description validated in customer portal: "${server.description}"`);
                 }
             }
         } else {
-            console.log(`ℹ️ No servers found in test data, skipping validation`);
         }
     }
 
     private async validateCategoryOperations(category: string, testData: any, apiSpecParser: any, page: Page): Promise<void> {
-        console.log(`🔍 Validating category operations in customer portal: "${category}"`);
         
         // First, try to expand the category if it exists
         await this.expandCategory(category);
@@ -801,14 +649,12 @@ export class CustomerPortalPage extends UIActions {
         // Look for the category in the tree view
         const categoryLink = this.page.locator(`a.data-title[aria-label="${category}"]`);
         if (await categoryLink.isVisible()) {
-            console.log(`✅ Found category in tree view: "${category}"`);
             
             // Get operations for this category
             const categoryOperations = testData.endpoints.filter((endpoint: any) => 
                 endpoint.path.startsWith(`/${category}`)
             );
             
-            console.log(`📊 Found ${categoryOperations.length} operations in category "${category}"`);
             
             // Validate each operation in the category
             for (const endpoint of categoryOperations.slice(0, 2)) { // Limit to first 2 for performance
@@ -817,7 +663,6 @@ export class CustomerPortalPage extends UIActions {
                 }
             }
         } else {
-            console.log(`⚠️ Category not found in tree view: "${category}"`);
         }
     }
 
@@ -825,13 +670,11 @@ export class CustomerPortalPage extends UIActions {
         const summary = apiSpecParser.getEndpointSummary(endpoint.path, method);
         if (!summary) return;
         
-        console.log(`🔍 Validating operation in customer portal: ${summary}`);
         
         // Look for the operation in the tree view based on summary/title
         const operationLink = this.page.locator(`a.data-title[aria-label="${summary}"], a.data-title:has-text("${summary}")`);
         
         if (await operationLink.isVisible()) {
-            console.log(`✅ Operation found in tree view: ${summary}`);
             
             // Navigate to the operation
             try {
@@ -843,7 +686,6 @@ export class CustomerPortalPage extends UIActions {
                 if (await pageTitle.isVisible()) {
                     const titleText = await pageTitle.textContent();
                     if (titleText?.includes(summary)) {
-                        console.log(`✅ Successfully navigated to operation: ${summary}`);
                         
                         // Now validate the complete API endpoint using the new methods
                         await this.validateCompleteApiEndpoint(method, endpoint.path);
@@ -851,10 +693,8 @@ export class CustomerPortalPage extends UIActions {
                 }
                 
             } catch (error) {
-                console.log(`⚠️ Could not navigate to operation: ${summary} - ${error}`);
             }
         } else {
-            console.log(`⚠️ Operation not found in tree view: ${summary}`);
         }
     }
 }
