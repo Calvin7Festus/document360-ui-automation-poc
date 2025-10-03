@@ -1,5 +1,6 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { UIActions } from '../../commons/ui-actions';
+import { ToastMessage } from '../components/toast-message.component';
 
 export class ApiDocPage extends UIActions {
 
@@ -13,6 +14,10 @@ export class ApiDocPage extends UIActions {
     readonly termsOfService: Locator;
     readonly externalDocs: Locator;
     readonly serverVariablesSection: Locator;
+
+    // Publishing locators
+    readonly publishButton: Locator;
+    readonly toastMessage: ToastMessage;
 
     // Function-based locators used in tests
     readonly getApiTitle: (title: string) => Locator;
@@ -42,6 +47,10 @@ export class ApiDocPage extends UIActions {
         this.termsOfService = this.page.locator('a.contact-name');
         this.externalDocs = this.page.locator('a.contact-url');
         this.serverVariablesSection = this.page.locator('.server-variable');
+
+        // Initialize publishing locators
+        this.publishButton = this.page.locator('button#publish');
+        this.toastMessage = new ToastMessage(page);
         
         // Initialize function-based locators
         this.getApiTitle = (title: string) => this.getByTitle(title);
@@ -73,6 +82,20 @@ export class ApiDocPage extends UIActions {
             path: `test-results/validation-screenshots/${name}-${Date.now()}.png`,
             fullPage: true 
         });
+    }
+
+    async publishApiDocumentation(): Promise<void> {
+        console.log('📤 Publishing API documentation...');
+        await this.publishButton.waitFor({ state: 'visible' });
+        await this.publishButton.click();
+        
+        // Wait for and validate success toast
+        await this.toastMessage.waitForSuccessToast();
+        await expect(this.toastMessage.successToast).toBeVisible();
+        
+        // Get and log the toast message for debugging
+        const toastText = await this.toastMessage.getToastText();
+        console.log(`✅ API documentation published successfully. Toast message: "${toastText}"`);
     }
 
     // Helper methods for category folder navigation (used in comprehensive validation)

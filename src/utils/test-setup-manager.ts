@@ -40,7 +40,7 @@ export class TestSetupManager {
   /**
    * Complete test setup including validation, initialization, and API creation
    */
-  async setupTest(): Promise<TestSetupContext> {
+  async setupTest(shouldPublish: boolean = false): Promise<TestSetupContext> {
     // 1. Validate test configuration
     await this.validateConfiguration();
     
@@ -54,7 +54,7 @@ export class TestSetupManager {
     const { apiSpecParser, testData } = await this.parseApiSpecification();
     
     // 5. Create API definition for testing
-    await this.createApiDefinition(pageObjects, apiSpecParser);
+    await this.createApiDefinition(pageObjects, apiSpecParser, shouldPublish);
     
     // 6. Validate navigation success
     await this.validateNavigationSuccess();
@@ -66,6 +66,13 @@ export class TestSetupManager {
     };
 
     return this.context;
+  }
+
+  /**
+   * Setup test specifically for customer portal (publishes API documentation)
+   */
+  async setupTestForCustomerPortal(): Promise<TestSetupContext> {
+    return this.setupTest(true);
   }
 
   /**
@@ -165,9 +172,10 @@ export class TestSetupManager {
 
   private async createApiDefinition(
     pageObjects: Omit<TestSetupContext, 'apiSpecParser' | 'testData'>,
-    apiSpecParser: ApiSpecParser
+    apiSpecParser: ApiSpecParser,
+    shouldPublish: boolean = false
   ): Promise<void> {
-    const { header, newApiModal } = pageObjects;
+    const { header, newApiModal, apiDocPage } = pageObjects;
     const apiHelper = new ApiHelper(this.page);
     
     // Get API file path for upload
@@ -208,9 +216,16 @@ export class TestSetupManager {
       }
     }
 
-    // Close modal and wait for UI to settle
-    await newApiModal.clickOnCancelButton();
-    await this.page.waitForTimeout(3000);
+    if (shouldPublish) {
+      // For customer portal tests: publish the API documentation
+      loggers.setup.info('Publishing API documentation for customer portal testing');
+      await apiDocPage.publishApiDocumentation();
+      loggers.setup.info('✅ API documentation published successfully');
+    } else {
+      // For regular tests: close modal and wait for UI to settle
+      await newApiModal.clickOnCancelButton();
+      await this.page.waitForTimeout(3000);
+    }
   }
 
   private async validateNavigationSuccess(): Promise<void> {
