@@ -3,8 +3,10 @@ import { ApiDocPage } from '../../../page-factory/pages/api-doc.page';
 import { Header } from '../../../page-factory/components/header.component';
 import { NewApiCreationModal } from '../../../page-factory/components/new-api-creation.modal';
 import { ToastMessage } from '../../../page-factory/components/toast-message.component';
-import { ApiHelper } from '../../../utils/api-helper';
-import { ConfigManager } from '../../../utils/config-manager';
+import { ApiHelper } from '../../../utils/api/api-helper';
+import { ConfigManager } from '../../../utils/config/config-manager';
+import { TestSetupManager } from '../../../utils/test-setup/test-setup-manager';
+import { getTestDataProvider, TestDataFile } from '../../../utils/data/test-data-provider';
 import path from 'path';
 
 test.describe('Category 1: API Import Functionality Tests', () => {
@@ -12,86 +14,62 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   let header: Header;
   let newApiModal: NewApiCreationModal;
   let toastMessage: ToastMessage;
+  let setupManager: TestSetupManager;
+
+  // Get test data for import tests
+  const testDataProvider = getTestDataProvider();
+  let importTestData: TestDataFile[] = [];
 
   test.beforeEach(async ({ page }) => {
     // Reset cleanup state for each test
-    const { ApiHelper } = await import('../../../utils/api-helper');
+    const { ApiHelper } = await import('../../../utils/api/api-helper');
     ApiHelper.resetCleanupState();
     
     apiDocPage = new ApiDocPage(page);
     header = new Header(page);
     newApiModal = new NewApiCreationModal(page);
     toastMessage = new ToastMessage(page);
+    setupManager = new TestSetupManager(page);
 
     const configManager = ConfigManager.getInstance();
     await page.goto(configManager.get<string>('BASE_URL'));
   });
 
-  test('TC-001: Import YAML File - Should successfully import API documentation from YAML file @import', async ({ page }) => {
-    const yamlFilePath = path.join(__dirname, '../../../../test-data/create-api-doc/yaml-api.yaml');
-    const apiHelper = new ApiHelper(page);
-    
-    await header.clickOnCreateButton();
-    await header.clickOnNewApiButton();
-    await expect(newApiModal.uploadApiDefinitionButton).toBeVisible();
-    
-    await newApiModal.uploadFromMyDeviceButton.setInputFiles(yamlFilePath);
-
-    await newApiModal.clickOnNewApiReferenceButton();
-    const apiResponsePromise = apiHelper.waitForApiCreationResponse();
-    
-    const apiResponse = await apiResponsePromise;
-
-    await newApiModal.clickOnCancelButton();
-    
-    await expect(page).toHaveURL(/api-documentation/);
-    await expect(apiDocPage.getApiTitle('YAML API Specification')).toBeVisible();
-    await apiDocPage.takeValidationScreenshot('yaml-import-success');
+  // Initialize test data and generate tests
+  test.beforeAll(async () => {
+    importTestData = await testDataProvider.getTestDataCombinations('import');
   });
 
-  test('TC-002: Import JSON File - Should successfully import API documentation from JSON file @import', async ({ page }) => {
-    const jsonFilePath = path.join(__dirname, '../../../../test-data/create-api-doc/json-api.json');
-    const apiHelper = new ApiHelper(page);
-    
-    await header.clickOnCreateButton();
-    await header.clickOnNewApiButton();
-    await expect(newApiModal.uploadApiDefinitionButton).toBeVisible();
-    
-    await newApiModal.uploadFromMyDeviceButton.setInputFiles(jsonFilePath);
+  // Data-driven tests for file import - using TestDataProvider for consistency
+  const stableTestData = [
+    testDataProvider.getTestDataByKey('SIMPLE_YAML'),
+    testDataProvider.getTestDataByKey('SIMPLE_JSON'),
+    testDataProvider.getTestDataByKey('COMPREHENSIVE')
+  ].filter(Boolean); // Remove any null values
 
-    await newApiModal.clickOnNewApiReferenceButton();
-    const apiResponsePromise = apiHelper.waitForApiCreationResponse();
-    
-    const apiResponse = await apiResponsePromise;
+  for (const testData of stableTestData) {
+    test(`TC-001-${testData.format.toUpperCase()}: Import ${testData.format.toUpperCase()} File - ${testData.expectedTitle} @import`, async ({ page }) => {
+      const filePath = testDataProvider.getTestDataPath(testData.file);
+      const apiHelper = new ApiHelper(page);
+      
+      await header.clickOnCreateButton();
+      await header.clickOnNewApiButton();
+      await expect(newApiModal.uploadApiDefinitionButton).toBeVisible();
+      
+      await newApiModal.uploadFromMyDeviceButton.setInputFiles(filePath);
 
-    await newApiModal.clickOnCancelButton();
-    
-    await expect(page).toHaveURL(/api-documentation/);
-    await expect(apiDocPage.getApiTitle('JSON API Specification')).toBeVisible();
-    await apiDocPage.takeValidationScreenshot('json-import-success');
-  });
+      await newApiModal.clickOnNewApiReferenceButton();
+      const apiResponsePromise = apiHelper.waitForApiCreationResponse();
+      
+      const apiResponse = await apiResponsePromise;
 
-  test('TC-003: Import YML File - Should successfully import API documentation from YML file @import', async ({ page }) => {
-    const ymlFilePath = path.join(__dirname, '../../../../test-data/create-api-doc/yml-api.yml');
-    const apiHelper = new ApiHelper(page);
-    
-    await header.clickOnCreateButton();
-    await header.clickOnNewApiButton();
-    await expect(newApiModal.uploadApiDefinitionButton).toBeVisible();
-    
-    await newApiModal.uploadFromMyDeviceButton.setInputFiles(ymlFilePath);
-
-    await newApiModal.clickOnNewApiReferenceButton();
-    const apiResponsePromise = apiHelper.waitForApiCreationResponse();
-    
-    const apiResponse = await apiResponsePromise;
-
-    await newApiModal.clickOnCancelButton();
-    
-    await expect(page).toHaveURL(/api-documentation/);
-    await expect(apiDocPage.getApiTitle('YML API Specification')).toBeVisible();
-    await apiDocPage.takeValidationScreenshot('yml-import-success');
-  });
+      await newApiModal.clickOnCancelButton();
+      
+      await expect(page).toHaveURL(/api-documentation/);
+      await expect(apiDocPage.getApiTitle(testData.expectedTitle)).toBeVisible();
+      await apiDocPage.takeValidationScreenshot(`${testData.format}-import-success`);
+    });
+  }
 
   test('TC-004: Import from URL - Should successfully import API documentation from external URL @import', async ({ page }) => {
     const configManager = ConfigManager.getInstance();
@@ -118,7 +96,7 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   });
 
   test('TC-005A: Import Error Handling - Invalid File Format - Should handle unsupported file formats gracefully @import', async ({ page }) => {
-    const invalidFilePath = path.join(__dirname, '../../../../test-data/create-api-doc/invalid-file.txt');
+    const invalidFilePath = path.join(__dirname, '../../../../test-data/invalid-apis/unsupported/invalid-file.txt');
     
     await header.clickOnCreateButton();
     await header.clickOnNewApiButton();
@@ -132,7 +110,7 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   });
 
   test('TC-005B: Import Error Handling - Invalid YAML Structure - Should handle malformed YAML gracefully @import', async ({ page }) => {
-    const invalidYamlPath = path.join(__dirname, '../../../../test-data/create-api-doc/invalid-yaml.yaml');
+    const invalidYamlPath = path.join(__dirname, '../../../../test-data/invalid-apis/empty/invalid-yaml.yaml');
     
     await header.clickOnCreateButton();
     await header.clickOnNewApiButton();
@@ -147,7 +125,7 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   });
 
   test('TC-005C: Import Error Handling - Invalid JSON Structure - Should handle malformed JSON gracefully @import', async ({ page }) => {
-    const invalidJsonPath = path.join(__dirname, '../../../../test-data/create-api-doc/invalid-json-structure.json');
+    const invalidJsonPath = path.join(__dirname, '../../../../test-data/invalid-apis/malformed/invalid-json-structure.json');
     
     await header.clickOnCreateButton();
     await header.clickOnNewApiButton();
@@ -162,7 +140,7 @@ test.describe('Category 1: API Import Functionality Tests', () => {
   });
 
   test('TC-005D: Import Error Handling - Empty File - Should handle empty files gracefully @import', async ({ page }) => {
-    const emptyFilePath = path.join(__dirname, '../../../../test-data/create-api-doc/empty-file.yaml');
+    const emptyFilePath = path.join(__dirname, '../../../../test-data/invalid-apis/empty/empty-file.yaml');
     
     await header.clickOnCreateButton();
     await header.clickOnNewApiButton();

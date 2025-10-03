@@ -1,5 +1,6 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { UIActions } from '../../commons/ui-actions';
+import { escapeTextForSelector, createSafeTextSelector } from '../../utils/ui/locator-utils';
 
 export class CustomerPortalPage extends UIActions {
 
@@ -157,7 +158,10 @@ export class CustomerPortalPage extends UIActions {
         // Initialize function-based locators based on actual DOM structure
         this.getApiTitleByText = (title: string) => this.page.locator(`.article-tilte b:has-text("${title}"), .article-title:has-text("${title}")`);
         this.getApiVersionByText = (version: string) => this.page.locator(`.article-version:has-text("${version}"), small.article-version:has-text("${version}")`);
-        this.getApiDescriptionByText = (description: string) => this.page.locator(`.article-description p:has-text("${description}")`);
+        this.getApiDescriptionByText = (description: string) => {
+            const safeSelector = createSafeTextSelector(description);
+            return this.page.locator(`.article-description p${safeSelector}`).first();
+        };
         this.getServerUrl = (index: number) => this.page.locator('a.server-url').nth(index);
         this.getServerDescription = (index: number) => this.page.locator('em.server-description').nth(index);
         this.getEndpointPath = (path: string) => this.page.locator(`a.data-title[aria-label*="${path}"], a.data-title:has-text("${path}")`);

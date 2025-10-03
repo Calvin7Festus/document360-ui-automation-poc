@@ -4,7 +4,7 @@
  */
 
 import { Logger, LogLevel, LoggerConfig, ChildLogger } from './logger';
-import { ConfigManager } from './config-manager';
+import { ConfigManager } from '../config/config-manager';
 
 /**
  * Logger Factory class for creating configured logger instances

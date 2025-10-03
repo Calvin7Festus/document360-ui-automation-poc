@@ -1,10 +1,10 @@
 import { Page, expect } from '@playwright/test';
 import * as path from 'path';
-import { ApiDocPage } from '../page-factory/pages/api-doc.page';
-import { Header } from '../page-factory/components/header.component';
-import { NewApiCreationModal } from '../page-factory/components/new-api-creation.modal';
-import { ApiSpecParser } from './api-spec-parser';
-import { ApiHelper } from './api-helper';
+import { ApiDocPage } from '../../page-factory/pages/api-doc.page';
+import { Header } from '../../page-factory/components/header.component';
+import { NewApiCreationModal } from '../../page-factory/components/new-api-creation.modal';
+import { ApiSpecParser } from '../api/api-spec-parser';
+import { ApiHelper } from '../api/api-helper';
 import { 
   TEST_CONFIG, 
   TEST_MESSAGES, 
@@ -12,8 +12,9 @@ import {
   TestDataInterface, 
   validateTestConfig, 
   getCurrentTestFileInfo 
-} from '../config/test-data.config';
-import { loggers } from './logger-factory';
+} from '../../config/test-data.config';
+import { TestDataFile, getTestDataProvider } from '../data/test-data-provider';
+import { loggers } from '../logging/logger-factory';
 
 /**
  * Interface for test setup context
@@ -43,7 +44,7 @@ export class TestSetupManager {
    */
   async setupTest(shouldPublish: boolean = false): Promise<TestSetupContext> {
     // Reset cleanup state for new test
-    const { ApiHelper } = await import('./api-helper');
+    const { ApiHelper } = await import('../api/api-helper');
     ApiHelper.resetCleanupState();
     
     // 1. Validate test configuration
@@ -78,6 +79,34 @@ export class TestSetupManager {
    */
   async setupTestForCustomerPortal(): Promise<TestSetupContext> {
     return this.setupTest(true);
+  }
+
+  /**
+   * Set up test with specific test data file
+   */
+  async setupTestWithData(testDataFile: TestDataFile, shouldPublish: boolean = false): Promise<TestSetupContext> {
+    // Temporarily override the test data config
+    const originalFile = TEST_DATA_CONFIG.apiSpecFile;
+    TEST_DATA_CONFIG.apiSpecFile = testDataFile.file;
+    
+    try {
+      const context = await this.setupTest(shouldPublish);
+      
+      // Add test data file info to context
+      (context as any).testDataFile = testDataFile;
+      
+      return context;
+    } finally {
+      // Restore original config
+      TEST_DATA_CONFIG.apiSpecFile = originalFile;
+    }
+  }
+
+  /**
+   * Set up test for customer portal with specific test data file
+   */
+  async setupTestForCustomerPortalWithData(testDataFile: TestDataFile): Promise<TestSetupContext> {
+    return this.setupTestWithData(testDataFile, true);
   }
 
   /**
@@ -133,7 +162,7 @@ export class TestSetupManager {
 
   private async parseApiSpecification(): Promise<{ apiSpecParser: ApiSpecParser; testData: TestDataInterface }> {
     // Get API file path
-    const apiFilePath = path.join(__dirname, '..', TEST_CONFIG.TEST_DATA_DIR, TEST_DATA_CONFIG.apiSpecFile);
+    const apiFilePath = path.join(__dirname, '../../../test-data', TEST_DATA_CONFIG.apiSpecFile);
     const currentFileInfo = getCurrentTestFileInfo();
     
     // Log file usage if verbose logging is enabled
@@ -172,13 +201,13 @@ export class TestSetupManager {
 
   private logExtractedData(testData: TestDataInterface): void {
     if (TEST_CONFIG.ENABLE_VERBOSE_LOGGING) {
-      console.log(TEST_MESSAGES.SETUP.EXTRACTED_DATA);
-      console.log(TEST_MESSAGES.SETUP.TITLE(testData.apiTitle));
-      console.log(TEST_MESSAGES.SETUP.VERSION(testData.apiVersion));
-      console.log(TEST_MESSAGES.SETUP.DESCRIPTION(testData.apiDescription || 'N/A'));
-      console.log(TEST_MESSAGES.SETUP.SERVERS(testData.servers.length));
-      console.log(TEST_MESSAGES.SETUP.TAGS(testData.tags.length));
-      console.log(TEST_MESSAGES.SETUP.ENDPOINTS(testData.endpointPaths.length));
+      loggers.setup.info(TEST_MESSAGES.SETUP.EXTRACTED_DATA);
+      loggers.setup.info(TEST_MESSAGES.SETUP.TITLE(testData.apiTitle));
+      loggers.setup.info(TEST_MESSAGES.SETUP.VERSION(testData.apiVersion));
+      loggers.setup.info(TEST_MESSAGES.SETUP.DESCRIPTION(testData.apiDescription || 'N/A'));
+      loggers.setup.info(TEST_MESSAGES.SETUP.SERVERS(testData.servers.length));
+      loggers.setup.info(TEST_MESSAGES.SETUP.TAGS(testData.tags.length));
+      loggers.setup.info(TEST_MESSAGES.SETUP.ENDPOINTS(testData.endpointPaths.length));
     }
   }
 
@@ -191,7 +220,7 @@ export class TestSetupManager {
     this.apiHelper = new ApiHelper(this.page); // Store the instance for cleanup
     
     // Get API file path for upload
-    const apiFilePath = path.join(__dirname, '..', TEST_CONFIG.TEST_DATA_DIR, TEST_DATA_CONFIG.apiSpecFile);
+    const apiFilePath = path.join(__dirname, '../../../test-data', TEST_DATA_CONFIG.apiSpecFile);
     
     // Navigate through API creation flow
     await header.clickOnCreateButton();

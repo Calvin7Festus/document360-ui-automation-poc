@@ -34,8 +34,10 @@ document360-ui-automation-poc/
 │   │       ├── api-import/       # Import functionality tests (6)
 │   │       ├── api-content/      # UI content validation tests (2 consolidated)
 │   │       └── customer-portal/  # Customer portal tests (2 mirrored)
-│   └── test-data/                # Test data files
-│       └── create-api-doc/       # API specification files
+│   └── test-data/                # Test data files (organized structure)
+│       ├── valid-apis/           # Valid API specifications
+│       ├── invalid-apis/         # Error test cases
+│       └── format-specific/      # Format-specific test files
 ├── playwright.config.ts          # Playwright configuration
 ├── package.json                  # Dependencies and scripts
 └── storageState.json             # Authentication state for tests

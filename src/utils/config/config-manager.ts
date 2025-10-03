@@ -33,7 +33,7 @@ export class ConfigManager {
     this.config.set('DASHBOARD_URL', process.env.DASHBOARD_URL || 'https://portal.document360.io/dashboard');
     
     // File paths
-    this.config.set('TEST_DATA_DIR', process.env.TEST_DATA_DIR || '../test-data/create-api-doc');
+    this.config.set('TEST_DATA_DIR', process.env.TEST_DATA_DIR || '../test-data');
     this.config.set('SCREENSHOT_DIR', process.env.SCREENSHOT_DIR || 'test-results/validation-screenshots');
     this.config.set('STORAGE_STATE_FILE', process.env.STORAGE_STATE_FILE || 'storageState.json');
     

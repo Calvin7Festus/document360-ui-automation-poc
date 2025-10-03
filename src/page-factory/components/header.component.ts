@@ -22,7 +22,7 @@ export class Header extends UIActions {
 
   async clickOnNewApiButton() {
     // Wait for the button to be visible and clickable
-    await this.newApiButton.waitFor({ state: 'visible', timeout: 10000 });
+    await this.newApiButton.waitFor({ state: 'visible', timeout: 15000 });
     await this.newApiButton.click();
   }
 

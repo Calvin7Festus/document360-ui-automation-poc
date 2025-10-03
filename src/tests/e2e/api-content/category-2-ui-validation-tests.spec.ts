@@ -1,32 +1,53 @@
 import { test } from '@playwright/test';
-import { TestSetupManager, TestSetupContext } from '../../../utils/test-setup-manager';
+import { TestSetupManager, TestSetupContext } from '../../../utils/test-setup/test-setup-manager';
+import { getTestDataProvider } from '../../../utils/data/test-data-provider';
 
 test.describe('Category 2: UI Content Validation Tests', () => {
   // Configure longer timeouts for UI validation tests (headless mode can be slower)
   test.setTimeout(60000); // 60 seconds per test
   let setupManager: TestSetupManager;
-  let testContext: TestSetupContext;
+
+  // Get test data for validation tests
+  const testDataProvider = getTestDataProvider();
 
   test.beforeEach(async ({ page }) => {
     setupManager = new TestSetupManager(page);
-    testContext = await setupManager.setupTest();
   });
 
-  test('TC-007: Validate Complete Introduction Section - Should display all API information correctly @api-content', async () => {
-    const { apiDocPage, testData } = testContext;
-    await apiDocPage.validateCompleteIntroductionSection(testData);
-  });
+  // Use stable test data for validation tests
+  const validationTestData = [
+    { file: 'comprehensive-api.yaml', expectedTitle: 'Comprehensive Test API', expectedVersion: '1.0.0' }
+  ];
 
-  test('TC-008: Validate Complete API Documentation Display - Should validate all endpoint details on the page @api-content', async ({ page }) => {
-    const { apiDocPage, apiSpecParser, testData } = testContext;
-    await apiDocPage.validateCompleteApiDocumentation(apiSpecParser, testData, page);
-  });
+  for (const testData of validationTestData) {
+    test(`TC-007: Validate Complete Introduction Section - ${testData.expectedTitle} @api-content`, async ({ page }) => {
+      const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
+      if (!testDataFile) {
+        throw new Error('Comprehensive test data not found');
+      }
+      
+      const testContext = await setupManager.setupTestWithData(testDataFile);
+      const { apiDocPage, testData: parsedTestData } = testContext;
+      await apiDocPage.validateCompleteIntroductionSection(parsedTestData);
+    });
+    
+    test(`TC-008: Validate Complete API Documentation Display - ${testData.expectedTitle} @api-content`, async ({ page }) => {
+      const testDataFile = testDataProvider.getTestDataByKey('COMPREHENSIVE');
+      if (!testDataFile) {
+        throw new Error('Comprehensive test data not found');
+      }
+      
+      const testContext = await setupManager.setupTestWithData(testDataFile);
+      const { apiDocPage, apiSpecParser, testData: parsedTestData } = testContext;
+      await apiDocPage.validateCompleteApiDocumentation(apiSpecParser, parsedTestData, page);
+    });
+  }
 
   test.afterEach(async ({ page }) => {
     if (setupManager) {
       await setupManager.teardownTest();
     } else {
-      const { ApiHelper } = await import('../../../utils/api-helper');
+      const { ApiHelper } = await import('../../../utils/api/api-helper');
       const apiHelper = new ApiHelper(page);
       await apiHelper.deleteTrackedApiDefinitions();
     }

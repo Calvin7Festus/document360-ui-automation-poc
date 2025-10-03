@@ -11,8 +11,8 @@ dotenv.config();
 export default defineConfig({
   testDir: './src/tests',
   
-  /* Run tests in files in parallel */
-  fullyParallel: process.env.FULLY_PARALLEL === 'true',
+  /* Disable parallel execution for trial account limitations */
+  fullyParallel: false,
   
   /* Fail the build on CI if you accidentally left test.only in the source code. */
   forbidOnly: process.env.CI === 'true',
@@ -20,8 +20,8 @@ export default defineConfig({
   /* Retry on CI only */
   retries: process.env.CI === 'true' ? parseInt(process.env.RETRIES_ON_CI || '2') : 0,
   
-  /* Opt out of parallel tests on CI. */
-  workers: process.env.CI === 'true' ? parseInt(process.env.WORKERS_ON_CI || '1') : undefined,
+  /* Use single worker to avoid trial account limitations (max 3 API docs) */
+  workers: 1,
   
   /* Reporter to use. See https://playwright.dev/docs/test-reporters */
   reporter: [

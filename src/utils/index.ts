@@ -6,7 +6,7 @@
  */
 
 // Configuration Management (Singleton Pattern)
-export { ConfigManager, getConfig } from './config-manager';
+export { ConfigManager, getConfig } from './config/config-manager';
 
 // API Response Tracking (Observer Pattern)
 export {
@@ -15,7 +15,7 @@ export {
   ApiResponseLogger,
   IApiResponseObserver,
   ApiResponseData
-} from './api-response-observer';
+} from './api/api-response-observer';
 
 // Validation Strategies (Strategy Pattern)
 export {
@@ -28,7 +28,7 @@ export {
   ApiSecurityValidationStrategy,
   ApiParametersValidationStrategy,
   ApiResponsesValidationStrategy
-} from './validation-strategy';
+} from './test-setup/validation-strategy';
 
 // API Specification Parsing (Factory Pattern)
 export {
@@ -37,23 +37,31 @@ export {
   ApiSpecSourceType,
   ApiSpecParserOptions,
   ApiSpec
-} from './api-spec-parser';
+} from './api/api-spec-parser';
 
 // Test Setup Management
 export {
   TestSetupManager,
   TestSetupContext,
   createTestSetupManager
-} from './test-setup-manager';
-
-export {
-  ImportTestSetupManager,
-  ImportTestSetupContext,
-  createImportTestSetupManager
-} from './import-test-setup-manager';
+} from './test-setup/test-setup-manager';
 
 // API Helper
-export { ApiHelper } from './api-helper';
+export { ApiHelper } from './api/api-helper';
+
+// Data Management
+export {
+  TestDataProvider,
+  TestDataFile,
+  getTestDataProvider
+} from './data/test-data-provider';
+
+// UI Utilities
+export {
+  escapeTextForSelector,
+  createSafeTextSelector,
+  createMultipleSelectors
+} from './ui/locator-utils';
 
 // Logger (Singleton Pattern)
 export {
@@ -65,17 +73,14 @@ export {
   createLogger,
   logger,
   log
-} from './logger';
+} from './logging/logger';
 
 export {
   LoggerFactory,
   loggers,
   getLogger,
   defaultLogger
-} from './logger-factory';
-
-// Examples and Documentation
-export { ApiSpecParserExamples } from './api-spec-parser-examples';
+} from './logging/logger-factory';
 
 /**
  * Utility Factory - Creates commonly used utility instances
@@ -85,23 +90,15 @@ export class UtilityFactory {
    * Create a complete test setup for Category 2 tests
    */
   static createCategory2Setup(page: any) {
-    const { TestSetupManager } = require('./test-setup-manager');
+    const { TestSetupManager } = require('./test-setup/test-setup-manager');
     return new TestSetupManager(page);
-  }
-
-  /**
-   * Create a complete test setup for Category 1 tests
-   */
-  static createCategory1Setup(page: any) {
-    const { ImportTestSetupManager } = require('./import-test-setup-manager');
-    return new ImportTestSetupManager(page);
   }
 
   /**
    * Create an API helper with observer pattern
    */
   static createApiHelper(page: any) {
-    const { ApiHelper } = require('./api-helper');
+    const { ApiHelper } = require('./api/api-helper');
     return new ApiHelper(page);
   }
 
@@ -109,7 +106,7 @@ export class UtilityFactory {
    * Create a validation context with composite strategy
    */
   static createCompositeValidator() {
-    const { CompositeValidationStrategy, ValidationStrategyFactory, ValidationContext } = require('./validation-strategy');
+    const { CompositeValidationStrategy, ValidationStrategyFactory, ValidationContext } = require('./test-setup/validation-strategy');
     const composite = new CompositeValidationStrategy();
     
     // Add all validation strategies
@@ -126,7 +123,7 @@ export class UtilityFactory {
    * Create an API spec parser using factory pattern
    */
   static createApiSpecParser(filePath: string) {
-    const { ApiSpecParserFactory } = require('./api-spec-parser');
+    const { ApiSpecParserFactory } = require('./api/api-spec-parser');
     return ApiSpecParserFactory.createFromFile(filePath);
   }
 
@@ -134,7 +131,7 @@ export class UtilityFactory {
    * Create a logger for a specific category
    */
   static createLogger(category: string) {
-    const { LoggerFactory } = require('./logger-factory');
+    const { LoggerFactory } = require('./logging/logger-factory');
     return LoggerFactory.createChildLogger(category);
   }
 
@@ -142,7 +139,7 @@ export class UtilityFactory {
    * Create a complete logging setup for tests
    */
   static createTestLogging() {
-    const { LoggerFactory } = require('./logger-factory');
+    const { LoggerFactory } = require('./logging/logger-factory');
     return {
       api: LoggerFactory.createApiLogger(),
       ui: LoggerFactory.createUILogger(),

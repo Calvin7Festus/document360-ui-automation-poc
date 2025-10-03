@@ -44,7 +44,7 @@ export const TEST_CONFIG = {
   FALLBACK_URL: process.env.FALLBACK_URL || 'https://portal.document360.io',
   
   // Test Data Paths
-  TEST_DATA_DIR: process.env.TEST_DATA_DIR || '../../../../test-data/create-api-doc/',
+  TEST_DATA_DIR: process.env.TEST_DATA_DIR || '../../../../test-data/',
   
   // Screenshot Configuration
   SCREENSHOT_DIR: process.env.SCREENSHOT_DIR || 'test-results/validation-screenshots/',

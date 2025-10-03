@@ -1,6 +1,7 @@
 import { Locator, Page, expect } from '@playwright/test';
 import { UIActions } from '../../commons/ui-actions';
 import { ToastMessage } from '../components/toast-message.component';
+import { escapeTextForSelector, createSafeTextSelector, createMultipleSelectors } from '../../utils/ui/locator-utils';
 
 export class ApiDocPage extends UIActions {
 
@@ -52,10 +53,22 @@ export class ApiDocPage extends UIActions {
         this.publishButton = this.page.locator('button#publish');
         this.toastMessage = new ToastMessage(page);
         
-        // Initialize function-based locators
-        this.getApiTitle = (title: string) => this.getByTitle(title);
-        this.apiVersion = (version: string) => this.page.getByText(version);
-        this.apiDescription = (description: string) => this.page.getByText(description);
+        // Initialize function-based locators with safe text handling
+        this.getApiTitle = (title: string) => {
+            const escapedTitle = escapeTextForSelector(title);
+            return this.page.locator(`a[title='${escapedTitle}']`);
+        };
+        this.apiVersion = (version: string) => this.page.getByText(version, { exact: true });
+        this.apiDescription = (description: string) => {
+            // For descriptions with special characters, use a more robust approach
+            const safeSelector = createSafeTextSelector(description);
+            try {
+                return this.page.locator(`.article-description p${safeSelector}`).first();
+            } catch (error) {
+                // Fallback to simple text search
+                return this.page.getByText(description).first();
+            }
+        };
         this.serverUrl = (index: number) => this.page.locator('a.server-url').nth(index);
         this.serverDescription = (index: number) => this.page.locator('em.server-description').nth(index);
         this.endpointPath = (path: string) => this.page.getByText(path);

@@ -1,7 +1,7 @@
 import { Page } from '@playwright/test';
-import { ConfigManager } from './config-manager';
+import { ConfigManager } from '../config/config-manager';
 import { ApiResponseObserver, ApiCreationObserver, IApiResponseObserver } from './api-response-observer';
-import { loggers } from './logger-factory';
+import { loggers } from '../logging/logger-factory';
 
 export class ApiHelper {
   private page: Page;
@@ -122,8 +122,8 @@ export class ApiHelper {
         }
       });
 
-      return response.status() === 200;
-    } catch (error) {
+      return response.ok();
+    } catch {
       return false; // Assume it doesn't exist if we can't check
     }
   }

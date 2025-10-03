@@ -46,19 +46,22 @@
 - [ ] src/utils/validation-strategy.ts
 
 ### Test Data
-- [ ] test-data/create-api-doc/comprehensive-api.yaml
-- [ ] test-data/create-api-doc/empty-file.yaml
-- [ ] test-data/create-api-doc/invalid-file.txt
-- [ ] test-data/create-api-doc/invalid-json-structure.json
-- [ ] test-data/create-api-doc/invalid-json.json
-- [ ] test-data/create-api-doc/invalid-yaml.yaml
-- [ ] test-data/create-api-doc/json-api.json
-- [ ] test-data/create-api-doc/minimal-api.yaml
-- [ ] test-data/create-api-doc/simple-doc.json
-- [ ] test-data/create-api-doc/simple-doc.yaml
-- [ ] test-data/create-api-doc/simple-doc.yml
-- [ ] test-data/create-api-doc/yaml-api.yaml
-- [ ] test-data/create-api-doc/yml-api.yml
+- [ ] test-data/valid-apis/comprehensive/comprehensive-api.yaml
+- [ ] test-data/valid-apis/simple/simple-doc.yaml
+- [ ] test-data/valid-apis/simple/simple-doc.json
+- [ ] test-data/valid-apis/simple/simple-doc.yml
+- [ ] test-data/valid-apis/minimal/minimal-api.yaml
+- [ ] test-data/valid-apis/domain-specific/petstore-api.yaml
+- [ ] test-data/valid-apis/domain-specific/ecommerce-api.json
+- [ ] test-data/valid-apis/domain-specific/banking-api.yml
+- [ ] test-data/format-specific/yaml/yaml-api.yaml
+- [ ] test-data/format-specific/yaml/yml-api.yml
+- [ ] test-data/format-specific/json/json-api.json
+- [ ] test-data/invalid-apis/empty/empty-file.yaml
+- [ ] test-data/invalid-apis/empty/invalid-yaml.yaml
+- [ ] test-data/invalid-apis/malformed/invalid-json-structure.json
+- [ ] test-data/invalid-apis/malformed/invalid-json.json
+- [ ] test-data/invalid-apis/unsupported/invalid-file.txt
 
 ## ❌ Files to NEVER Commit
 

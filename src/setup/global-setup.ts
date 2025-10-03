@@ -2,7 +2,7 @@ import { chromium } from '@playwright/test';
 import fs from 'fs';
 import dotenv from 'dotenv';
 import { LoginPage } from '../page-factory/pages/login.page';
-import { ConfigManager } from '../utils/config-manager';
+import { ConfigManager } from '../utils/config/config-manager';
 
 // Load environment variables
 dotenv.config();
